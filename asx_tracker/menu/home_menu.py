@@ -19,4 +19,4 @@ class HomeMenu(Menu):
         elif option == 3:
             pass
         else:
-            Utils.quit()
+            exit()

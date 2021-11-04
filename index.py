@@ -9,4 +9,4 @@ if __name__ == "__main__":
         controller = Controller()
         controller.push(HomeMenu)
     except KeyboardInterrupt:
-        Utils.quit()
+        exit()

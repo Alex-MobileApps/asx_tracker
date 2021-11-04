@@ -9,12 +9,12 @@ CREATE TABLE IF NOT EXISTS listing (
     ticker          TEXT    PRIMARY KEY,
     name            TEXT    NOT NULL,
     mgmt_pct        INTEGER NOT NULL,
-    fetched_date    DATE    NOT NULL    DEFAULT '1900-01-01'
+    fetched_date    INTEGER NOT NULL    DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS intraday (
     ticker          TEXT    NOT NULL,
-    date            DATE    NOT NULL,
+    date            INTEGER NOT NULL,
     open            INTEGER NOT NULL,
     close           INTEGER NOT NULL,
     low             INTEGER NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS intraday (
 
 CREATE TABLE IF NOT EXISTS daily (
     ticker          TEXT    NOT NULL,
-    date            DATE    NOT NULL ,
+    date            INTEGER NOT NULL ,
     open            INTEGER NOT NULL,
     close           INTEGER NOT NULL,
     low             INTEGER NOT NULL,

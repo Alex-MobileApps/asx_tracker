@@ -1,4 +1,4 @@
-from asx_tracker.utils import clear
+from asx_tracker.utils import Utils
 from asx_tracker.printer import Printer
 
 class Menu():
@@ -19,7 +19,7 @@ class Menu():
     # Functionality
 
     def display(self):
-        clear()
+        Utils.clear()
         if self.title:
             Printer.header(self.title)
         if self.subtitle:

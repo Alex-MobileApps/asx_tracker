@@ -1,7 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.scraper.scraper import Scraper
-from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
+from asx_tracker.utils import Utils
 
 class UpdateMenu(Menu):
     def __init__(self):
@@ -26,27 +26,26 @@ class UpdateMenu(Menu):
         warn = False
 
         # Download new companies
-        print('Downloading new company names ... ', end='', flush=True)
-        fn = lambda: Database.insert_listings(Scraper.scrape_companies(comp_url))
-        if not UpdateMenu.download_single(fn):
+        print('Downloading new company names ...')
+        if not UpdateMenu.scrape_single(Scraper.scrape_companies, comp_url):
             warn = True
+        print()
 
         # Download new ETFs
-        print('Downloading new ETF names ... ', end='', flush=True)
-        fn = lambda: Database.insert_listings(Scraper.scrape_etfs())
-        if not UpdateMenu.download_single(fn):
+        print('Downloading new ETF names ...')
+        if not UpdateMenu.scrape_single(Scraper.scrape_etfs):
             warn = True
+        print()
 
         # Download daily
-        print('Downloading daily data ... ', end='', flush=True)
-        fn = lambda: Database.insert_daily(Scraper.scrape_daily())
-        if not UpdateMenu.download_single(fn):
+        print('Downloading daily data ...')
+        if not UpdateMenu.scrape_single(Scraper.scrape_daily):
             warn = True
+        print()
 
         # Download intraday
-        print('Downloading intraday data ... ', end='', flush=True)
-        fn = lambda: Database.insert_intraday(Scraper.scrape_intraday())
-        if not UpdateMenu.download_single(fn):
+        print('Downloading intraday data ...')
+        if not UpdateMenu.scrape_single(Scraper.scrape_intraday):
             warn = True
 
         # Complete
@@ -57,13 +56,13 @@ class UpdateMenu(Menu):
 
 
     @staticmethod
-    def download_single(fn):
+    def scrape_single(fn, *args):
         try:
-            count = fn()
-            print(f'complete ({count} added)')
+            count = fn(*args)
+            print(f'{Utils.CLEAR_LINE}  complete ({count} added)\t\t\t')
             return True
-        except:
-            print('FAILED')
+        except Exception as e:
+            print('  FAILED', f'({e})')
             return False
 
 

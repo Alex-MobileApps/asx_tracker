@@ -1,10 +1,10 @@
 class Sql():
 
-    _FOREIGN_KEYS = f"""
+    FOREIGN_KEYS = f"""
     PRAGMA foreign_keys = ON
     """
 
-    _CREATE_TAB_LISTING = f"""
+    CREATE_TAB_LISTING = f"""
     CREATE TABLE IF NOT EXISTS listing (
         ticker          TEXT    PRIMARY KEY,
         name            TEXT    NOT NULL,
@@ -13,7 +13,7 @@ class Sql():
     )
     """
 
-    _CREATE_TAB_INTRADAY = f"""
+    CREATE_TAB_INTRADAY = f"""
         CREATE TABLE IF NOT EXISTS intraday (
         ticker          TEXT    NOT NULL,
         date            INTEGER NOT NULL,
@@ -27,7 +27,7 @@ class Sql():
     )
     """
 
-    _CREATE_TAB_DAILY = f"""
+    CREATE_TAB_DAILY = f"""
     CREATE TABLE IF NOT EXISTS daily (
         ticker          TEXT    NOT NULL,
         date            INTEGER NOT NULL ,

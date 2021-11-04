@@ -23,8 +23,8 @@ class Scraper():
     _COL_API_LOW        = 'low'
     _COL_API_CLOSE      = 'close'
     _COL_API_VOL        = 'volume'
-    _INT_DAILY          = '1d'
-    _INT_INTRADAY       = '1m'
+    _INTERVAL_DAILY     = '1d'
+    _INTERVAL_INTRADAY  = '1m'
     _URL_COM            = 'https://www2.asx.com.au/markets/trade-our-cash-market/directory'
     _URL_ETP            = 'https://www2.asx.com.au/markets/trade-our-cash-market/asx-investment-products-directory/etps'
     _TICKER_EXT         = '.AX'
@@ -43,10 +43,10 @@ class Scraper():
     def scrape_etfs():
         dfs = pd.read_html(Scraper._URL_ETP, header=0)
         df = pd.concat([df[[Scraper._COL_ETP_TICKER,Scraper._COL_ETP_NAME,Scraper._COL_ETP_MGMT_PCT]][df[Scraper._COL_ETP_TYPE] == 'ETF'] for df in dfs], axis=0)
-        df.rename(columns={Scraper._COL_ETP_TICKER: Database._COL_TICKER, Scraper._COL_ETP_NAME: Database._COL_NAME, Scraper._COL_ETP_MGMT_PCT: Database._COL_MGMT_PCT}, inplace=True)
-        df[Database._COL_MGMT_PCT] *= 100
-        df[Database._COL_MGMT_PCT] = df[Database._COL_MGMT_PCT].astype(int)
-        df = df.groupby(Database._COL_TICKER, as_index=False).max()
+        df.rename(columns={Scraper._COL_ETP_TICKER: Database.COL_TICKER, Scraper._COL_ETP_NAME: Database.COL_NAME, Scraper._COL_ETP_MGMT_PCT: Database.COL_MGMT_PCT}, inplace=True)
+        df[Database.COL_MGMT_PCT] *= 100
+        df[Database.COL_MGMT_PCT] = df[Database.COL_MGMT_PCT].astype(int)
+        df = df.groupby(Database.COL_TICKER, as_index=False).max()
         return Database.insert_listings(df)
 
 
@@ -57,9 +57,9 @@ class Scraper():
         df = pd.read_csv(url, header=0)[[Scraper._COL_COM_TICKER, Scraper._COL_COM_NAME, Scraper._COL_COM_LIST_DATE]]
         df.dropna(subset=[Scraper._COL_COM_LIST_DATE], inplace=True)
         df.drop(Scraper._COL_COM_LIST_DATE, axis=1, inplace=True)
-        df.rename(columns={Scraper._COL_COM_TICKER: Database._COL_TICKER, Scraper._COL_COM_NAME: Database._COL_NAME}, inplace=True)
-        df[Database._COL_NAME] = df[Database._COL_NAME].fillna('')
-        df[Database._COL_MGMT_PCT] = 0
+        df.rename(columns={Scraper._COL_COM_TICKER: Database.COL_TICKER, Scraper._COL_COM_NAME: Database.COL_NAME}, inplace=True)
+        df[Database.COL_NAME] = df[Database.COL_NAME].fillna('')
+        df[Database.COL_MGMT_PCT] = 0
         return Database.insert_listings(df)
 
 
@@ -67,7 +67,7 @@ class Scraper():
 
     @staticmethod
     def scrape_daily():
-        for ticker, fetched_date in Database.fetch_listings(Database._COL_TICKER, Database._COL_FETCHED_DATE):
+        for ticker, fetched_date in Database.fetch_listings(Database.COL_TICKER, Database.COL_FETCHED_DATE):
             pass
         raise NotImplementedError()
 
@@ -78,14 +78,14 @@ class Scraper():
     def scrape_intraday():
         count = 0
         close = Date.timestamp_last_close()
-        data = Database.fetch_listings(Database._COL_TICKER, Database._COL_FETCHED_DATE)
+        data = Database.fetch_listings(Database.COL_TICKER, Database.COL_FETCHED_DATE)
         len_data = len(data)
         for i, (ticker, fetched_date) in enumerate(data):
             start = max(fetched_date + 1, Date.timestamp_30_days(offset=Date.HOUR))
             while start < close:
                 end = min(close, start + Date.WEEK)
                 try:
-                    df = Scraper._repeat_scrape_single_interval(ticker, Scraper._INT_INTRADAY, start, end)
+                    df = Scraper._repeat_scrape_single_interval(ticker, Scraper._INTERVAL_INTRADAY, start, end)
                     Database.update_listings_date(ticker, end)
                 except Exception as e:
                     print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
@@ -193,12 +193,12 @@ class Scraper():
         volume = Scraper._get_quote_value(Scraper._COL_API_VOL, quote, len_dates)
 
         # DataFrame
-        df = pd.DataFrame({Database._COL_DATE: dates, Database._COL_HIGH: high, Database._COL_OPEN: open, Database._COL_LOW: low, Database._COL_CLOSE: close, Database._COL_VOL: volume})
+        df = pd.DataFrame({Database.COL_DATE: dates, Database.COL_HIGH: high, Database.COL_OPEN: open, Database.COL_LOW: low, Database.COL_CLOSE: close, Database.COL_VOL: volume})
         df.dropna(how='any', inplace=True)
-        for col in [Database._COL_HIGH, Database._COL_OPEN, Database._COL_LOW, Database._COL_CLOSE]:
+        for col in [Database.COL_HIGH, Database.COL_OPEN, Database.COL_LOW, Database.COL_CLOSE]:
             df[col] = round(df[col] * 100).astype(int)
-        df[Database._COL_VOL] = df[Database._COL_VOL].astype(int)
-        df[Database._COL_TICKER] = ticker
+        df[Database.COL_VOL] = df[Database.COL_VOL].astype(int)
+        df[Database.COL_TICKER] = ticker
         Scraper._rate_limit(start_time)
         return df
 

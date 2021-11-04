@@ -1,6 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.menu.update_menu import UpdateMenu
 from asx_tracker.menu.visualise_menu import VisualiseMenu
+from asx_tracker.utils import Utils
 
 class HomeMenu(Menu):
     def __init__(self):
@@ -18,4 +19,4 @@ class HomeMenu(Menu):
         elif option == 3:
             pass
         else:
-            exit()
+            Utils.quit()

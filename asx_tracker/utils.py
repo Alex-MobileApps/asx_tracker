@@ -17,3 +17,8 @@ class Utils():
             return True
         except:
             return False
+
+    @staticmethod
+    def quit():
+        Utils.clear()
+        exit()

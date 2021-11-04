@@ -5,21 +5,21 @@ class Database():
 
     # Static variables
 
-    _TAB_LISTING = 'listing'
-    _TAB_INTRADAY = 'intraday'
-    _TAB_DAILY = 'daily'
-    _COL_TICKER = 'ticker'
-    _COL_NAME = 'name'
-    _COL_MGMT_PCT = 'mgmt_pct'
-    _COL_DATE = 'date'
-    _COL_OPEN = 'open'
-    _COL_CLOSE = 'close'
-    _COL_LOW = 'low'
-    _COL_HIGH = 'high'
-    _COL_VOL= 'volume'
-    _COL_DIV = 'dividends'
-    _COL_SPL = 'stock_splits'
-    _COL_FETCHED_DATE = 'fetched_date'
+    TAB_LISTING = 'listing'
+    TAB_INTRADAY = 'intraday'
+    TAB_DAILY = 'daily'
+    COL_TICKER = 'ticker'
+    COL_NAME = 'name'
+    COL_MGMT_PCT = 'mgmt_pct'
+    COL_DATE = 'date'
+    COL_OPEN = 'open'
+    COL_CLOSE = 'close'
+    COL_LOW = 'low'
+    COL_HIGH = 'high'
+    COL_VOL= 'volume'
+    COL_DIV = 'dividends'
+    COL_SPL = 'stock_splits'
+    COL_FETCHED_DATE = 'fetched_date'
 
     _PATH_DB = 'asx_tracker/database/data/database.db'
 
@@ -63,10 +63,10 @@ class Database():
 
     @staticmethod
     def create_tables():
-        Database._execute(Sql._FOREIGN_KEYS, fetch=False)
-        Database._execute(Sql._CREATE_TAB_LISTING, fetch=False)
-        Database._execute(Sql._CREATE_TAB_INTRADAY, fetch=False)
-        Database._execute(Sql._CREATE_TAB_DAILY, fetch=False)
+        Database._execute(Sql.FOREIGN_KEYS, fetch=False)
+        Database._execute(Sql.CREATE_TAB_LISTING, fetch=False)
+        Database._execute(Sql.CREATE_TAB_INTRADAY, fetch=False)
+        Database._execute(Sql.CREATE_TAB_DAILY, fetch=False)
 
 
     # Listings
@@ -76,10 +76,10 @@ class Database():
         data = []
         for i in range(len(df)):
             row = df.iloc[i]
-            data.append((row[Database._COL_TICKER], row[Database._COL_NAME], int(row[Database._COL_MGMT_PCT])))
+            data.append((row[Database.COL_TICKER], row[Database.COL_NAME], int(row[Database.COL_MGMT_PCT])))
         query = f"""
-        INSERT OR IGNORE INTO {Database._TAB_LISTING}
-        ({Database._COL_TICKER}, {Database._COL_NAME}, {Database._COL_MGMT_PCT})
+        INSERT OR IGNORE INTO {Database.TAB_LISTING}
+        ({Database.COL_TICKER}, {Database.COL_NAME}, {Database.COL_MGMT_PCT})
         VALUES
         (?,?,?)
         """
@@ -89,7 +89,7 @@ class Database():
     def fetch_listings(*cols):
         sel_cols = "*" if cols is None else ",".join(cols)
         query = f"""
-        SELECT {sel_cols} FROM {Database._TAB_LISTING} ORDER BY {Database._COL_TICKER}
+        SELECT {sel_cols} FROM {Database.TAB_LISTING} ORDER BY {Database.COL_TICKER}
         """
         return Database._execute(query)
 
@@ -97,9 +97,9 @@ class Database():
     def update_listings_date(ticker, fetched_date):
         data = [(int(fetched_date),ticker)]
         query = f"""
-        UPDATE {Database._TAB_LISTING}
-        SET {Database._COL_FETCHED_DATE} = ?
-        WHERE {Database._COL_TICKER} = ?
+        UPDATE {Database.TAB_LISTING}
+        SET {Database.COL_FETCHED_DATE} = ?
+        WHERE {Database.COL_TICKER} = ?
         """
         return Database._execute(query, values=data, fetch=False)
 
@@ -111,10 +111,10 @@ class Database():
         data = []
         for i in range(len(df)):
             row = df.iloc[i]
-            data.append((row[Database._COL_TICKER], int(row[Database._COL_DATE]), int(row[Database._COL_OPEN]), int(row[Database._COL_CLOSE]), int(row[Database._COL_LOW]), int(row[Database._COL_HIGH]), int(row[Database._COL_VOL])))
+            data.append((row[Database.COL_TICKER], int(row[Database.COL_DATE]), int(row[Database.COL_OPEN]), int(row[Database.COL_CLOSE]), int(row[Database.COL_LOW]), int(row[Database.COL_HIGH]), int(row[Database.COL_VOL])))
         query = f"""
-        INSERT OR IGNORE INTO {Database._TAB_INTRADAY}
-        ({Database._COL_TICKER}, {Database._COL_DATE}, {Database._COL_OPEN}, {Database._COL_CLOSE}, {Database._COL_LOW}, {Database._COL_HIGH}, {Database._COL_VOL})
+        INSERT OR IGNORE INTO {Database.TAB_INTRADAY}
+        ({Database.COL_TICKER}, {Database.COL_DATE}, {Database.COL_OPEN}, {Database.COL_CLOSE}, {Database.COL_LOW}, {Database.COL_HIGH}, {Database.COL_VOL})
         VALUES
         (?,?,?,?,?,?,?)
         """

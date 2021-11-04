@@ -2,10 +2,6 @@ from shutil import get_terminal_size
 
 class Printer():
 
-    _DIV_BOLD = '======================================'
-    _DIV_REG = '--------------------------------------'
-
-
     # Headers
 
     @staticmethod
@@ -32,7 +28,3 @@ class Printer():
             print('=' * size)
         else:
             print('-' * size)
-        #print(Printer._DIV_BOLD if bold else Printer._DIV_REG)
-
-    
-    

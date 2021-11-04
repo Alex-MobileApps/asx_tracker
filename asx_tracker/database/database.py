@@ -21,7 +21,7 @@ class Database():
     COL_SPL = 'stock_splits'
     COL_FETCHED_DATE = 'fetched_date'
 
-    _PATH_DB = 'asx_tracker/database/data/database.db'
+    _PATH_DB = 'asx_tracker/database/database.db'
 
 
     # Execute

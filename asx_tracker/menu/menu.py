@@ -3,11 +3,6 @@ from asx_tracker.printer import Printer
 
 class Menu():
 
-    # Static variables
-
-    _INVALID = lambda n: print(f'\rPlease select an option from 1 to {n}')
-
-
     # Constructor
 
     def __init__(self, title, subtitle, options):
@@ -37,8 +32,11 @@ class Menu():
             try:
                 val = int(val)
                 if val > len_options or val < 1:
-                    Menu._INVALID(len_options)
+                    Menu._invalid(len_options)
                 else:
                     return val
             except:
-                Menu._INVALID(len_options)
+                Menu._invalid(len_options)
+
+    def _invalid(n):
+        print(f'{Utils.CLEAR_LINE}Please select an option from 1 to {n}')

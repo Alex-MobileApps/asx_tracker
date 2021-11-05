@@ -5,7 +5,7 @@ Download, analyse and simulate trading for companies and ETFs on the ASX
 ## Requirements
 - Python 3
 
-### Additional libraries
+Libraries
 - pytz
 - requests
 - pandas

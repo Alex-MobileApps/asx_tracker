@@ -8,7 +8,7 @@ class HomeMenu(Menu):
         super().__init__(
             "ASX tracker",
             "Welcome to the ASX company and ETF tracker",
-            ["Update data (required within <time>)", "Visualise", "Paper trade", "Exit"])
+            ["Update data (required within <time>)", "Visualise", "Trading simulation", "Exit"])
 
     def handle_option(self, controller):
         option = self.select_option()

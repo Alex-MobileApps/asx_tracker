@@ -100,8 +100,9 @@ class Scraper():
     @staticmethod
     def _scrape_daily_internal(ticker, fetched_date, close, date_col):
         start = fetched_date + 1
-        count = Scraper._insert_interval(ticker, Database.insert_daily, Scraper._INTERVAL_DAILY, start, close, date_col)
-        return count if count is not None else 0
+        if start < close:
+            return Scraper._insert_interval(ticker, Database.insert_daily, Scraper._INTERVAL_DAILY, start, close, date_col)
+        return 0
 
 
     @staticmethod
@@ -128,6 +129,7 @@ class Scraper():
             return count
         except Exception as e:
             print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
+            return 0
 
 
     @staticmethod
@@ -140,9 +142,7 @@ class Scraper():
 
     @staticmethod
     def _scrape_single_interval(ticker, interval, start, end):
-
         start_time = time()
-
         # Scrape
         url = Scraper._url_yfinance(ticker + Scraper._TICKER_EXT, interval, start, end)
         data = requests.get(url, headers={'User-Agent':Utils._USER_AGENT})

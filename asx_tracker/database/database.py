@@ -107,14 +107,14 @@ class Database():
 
     @staticmethod
     def insert_intraday(df):
-        Database._insert_daily_intraday(df, Database.TAB_INTRADAY)
+        return Database._insert_daily_intraday(df, Database.TAB_INTRADAY)
 
 
     # Daily
 
     @staticmethod
     def insert_daily(df):
-        Database._insert_daily_intraday(df, Database.TAB_DAILY)
+        return Database._insert_daily_intraday(df, Database.TAB_DAILY)
 
 
     # Internal

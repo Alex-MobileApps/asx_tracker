@@ -129,7 +129,7 @@ class Scraper():
             return count
         except Exception as e:
             print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
-            return 0
+        return 0
 
 
     @staticmethod

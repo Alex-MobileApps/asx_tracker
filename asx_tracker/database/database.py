@@ -17,9 +17,8 @@ class Database():
     COL_LOW = 'low'
     COL_HIGH = 'high'
     COL_VOL= 'volume'
-    COL_DIV = 'dividends'
-    COL_SPL = 'stock_splits'
-    COL_FETCHED_DATE = 'fetched_date'
+    COL_LAST_INTRADAY = 'last_intraday'
+    COL_LAST_DAILY = 'last_daily'
 
     _PATH_DB = 'asx_tracker/database/database.db'
 
@@ -94,11 +93,11 @@ class Database():
         return Database._execute(query)
 
     @staticmethod
-    def update_listings_date(ticker, fetched_date):
+    def update_listings_date(ticker, fetched_date, date_col):
         data = [(int(fetched_date),ticker)]
         query = f"""
         UPDATE {Database.TAB_LISTING}
-        SET {Database.COL_FETCHED_DATE} = ?
+        SET {date_col} = ?
         WHERE {Database.COL_TICKER} = ?
         """
         return Database._execute(query, values=data, fetch=False)
@@ -108,24 +107,28 @@ class Database():
 
     @staticmethod
     def insert_intraday(df):
-        data = []
-        for i in range(len(df)):
-            row = df.iloc[i]
-            data.append((row[Database.COL_TICKER], int(row[Database.COL_DATE]), int(row[Database.COL_OPEN]), int(row[Database.COL_CLOSE]), int(row[Database.COL_LOW]), int(row[Database.COL_HIGH]), int(row[Database.COL_VOL])))
-        query = f"""
-        INSERT OR IGNORE INTO {Database.TAB_INTRADAY}
-        ({Database.COL_TICKER}, {Database.COL_DATE}, {Database.COL_OPEN}, {Database.COL_CLOSE}, {Database.COL_LOW}, {Database.COL_HIGH}, {Database.COL_VOL})
-        VALUES
-        (?,?,?,?,?,?,?)
-        """
-        return Database._execute(query, values=data, fetch=False)
+        Database._insert_daily_intraday(df, Database.TAB_INTRADAY)
 
 
     # Daily
 
     @staticmethod
     def insert_daily(df):
-        raise NotImplementedError()
+        Database._insert_daily_intraday(df, Database.TAB_DAILY)
 
 
+    # Internal
 
+    @staticmethod
+    def _insert_daily_intraday(df, table):
+        data = []
+        for i in range(len(df)):
+            row = df.iloc[i]
+            data.append((row[Database.COL_TICKER], int(row[Database.COL_DATE]), int(row[Database.COL_OPEN]), int(row[Database.COL_CLOSE]), int(row[Database.COL_LOW]), int(row[Database.COL_HIGH]), int(row[Database.COL_VOL])))
+        query = f"""
+        INSERT OR IGNORE INTO {table}
+        ({Database.COL_TICKER}, {Database.COL_DATE}, {Database.COL_OPEN}, {Database.COL_CLOSE}, {Database.COL_LOW}, {Database.COL_HIGH}, {Database.COL_VOL})
+        VALUES
+        (?,?,?,?,?,?,?)
+        """
+        return Database._execute(query, values=data, fetch=False)

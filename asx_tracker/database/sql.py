@@ -9,7 +9,8 @@ class Sql():
         ticker          TEXT    PRIMARY KEY,
         name            TEXT    NOT NULL,
         mgmt_pct        INTEGER NOT NULL,
-        fetched_date    INTEGER NOT NULL    DEFAULT 0
+        last_intraday   INTEGER NOT NULL    DEFAULT 0,
+        last_daily      INTEGER NOT NULL    DEFAULT 0
     )
     """
 
@@ -36,8 +37,6 @@ class Sql():
         low             INTEGER NOT NULL,
         high            INTEGER NOT NULL,
         volume          INTEGER NOT NULL,
-        dividends       INTEGER NOT NULL,
-        stock_splits    INTEGER NOT NULL,
         PRIMARY KEY (ticker, date),
         FOREIGN KEY (ticker) REFERENCES listing (ticker) ON UPDATE CASCADE ON DELETE CASCADE
     )

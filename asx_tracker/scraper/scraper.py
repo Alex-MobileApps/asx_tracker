@@ -9,7 +9,7 @@ class Scraper():
 
     # Static variables
 
-    _RATE_LIMIT         = 1.8 # Seconds (<1.8 will cause IP banning i.e. 2000 per hour)
+    _RATE_LIMIT         = 1.9 # Seconds (<1.8 will cause IP banning i.e. 2000 per hour)
     _COL_ETP_TICKER     = 'ASX Code'
     _COL_ETP_MGMT_PCT   = 'Management Cost %'
     _COL_ETP_NAME       = 'Exposure'
@@ -28,6 +28,8 @@ class Scraper():
     _URL_COM            = 'https://www2.asx.com.au/markets/trade-our-cash-market/directory'
     _URL_ETP            = 'https://www2.asx.com.au/markets/trade-our-cash-market/asx-investment-products-directory/etps'
     _TICKER_EXT         = '.AX'
+    _METHOD_DAILY        = 'daily'
+    _METHOD_INTRADAY     = 'intraday'
 
 
     # Scrape all listings
@@ -63,45 +65,70 @@ class Scraper():
         return Database.insert_listings(df)
 
 
-    # Scrape daily
-
-    @staticmethod
-    def scrape_daily():
-        for ticker, fetched_date in Database.fetch_listings(Database.COL_TICKER, Database.COL_FETCHED_DATE):
-            pass
-        raise NotImplementedError()
-
-
     # Scrape intraday
 
     @staticmethod
     def scrape_intraday():
+        return Scraper._scrape_intraday_or_daily(Scraper._scrape_intraday_internal, Database.COL_LAST_INTRADAY)
+
+
+    # Scrape daily
+
+    @staticmethod
+    def scrape_daily():
+        return Scraper._scrape_intraday_or_daily(Scraper._scrape_daily_internal, Database.COL_LAST_DAILY)
+
+
+    # Internal
+
+    @staticmethod
+    def _scrape_intraday_or_daily(fn, date_col):
+
+        # Setup data
+        data = Database.fetch_listings(Database.COL_TICKER, date_col)
+        len_data = len(data)
         count = 0
         close = Date.timestamp_last_close()
-        data = Database.fetch_listings(Database.COL_TICKER, Database.COL_FETCHED_DATE)
-        len_data = len(data)
+
+        # Scrape
         for i, (ticker, fetched_date) in enumerate(data):
-            start = max(fetched_date + 1, Date.timestamp_30_days(offset=Date.HOUR))
-            while start < close:
-                end = min(close, start + Date.WEEK)
-                try:
-                    df = Scraper._repeat_scrape_single_interval(ticker, Scraper._INTERVAL_INTRADAY, start, end)
-                    Database.update_listings_date(ticker, end)
-                except Exception as e:
-                    print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
-                    break
-
-                # Update database
-                if df is not None:
-                    count += Database.insert_intraday(df)
-                Database.update_listings_date(ticker, end)
-                start = end + 1
-
+            count += fn(ticker, fetched_date, close, date_col)
             print(f'{Utils.CLEAR_LINE}  {int(100 * (i+1) / len_data)}% ({count} added) - last update: {ticker} ', end='', flush=True)
         return count
 
 
-    # Internal
+    @staticmethod
+    def _scrape_daily_internal(ticker, fetched_date, close, date_col):
+        start = fetched_date + 1
+        count = Scraper._insert_interval(ticker, Database.insert_daily, Scraper._INTERVAL_DAILY, start, close, date_col)
+        return count if count is not None else 0
+
+
+    @staticmethod
+    def _scrape_intraday_internal(ticker, fetched_date, close, date_col):
+        count = 0
+        start = max(fetched_date + 1, Date.timestamp_30_days(offset=Date.HOUR))
+        while start < close:
+            end = min(close, start + Date.WEEK)
+            tmp_count = Scraper._insert_interval(ticker, Database.insert_intraday, Scraper._INTERVAL_INTRADAY, start, end, date_col)
+            if tmp_count is not None:
+                count += tmp_count
+            else:
+                break
+            start = end + 1
+        return count
+
+
+    @staticmethod
+    def _insert_interval(ticker, insert_fn, interval, start, end, date_col):
+        try:
+            df = Scraper._repeat_scrape_single_interval(ticker, interval, start, end)
+            count = insert_fn(df) if df is not None else 0
+            Database.update_listings_date(ticker, end, date_col)
+            return count
+        except Exception as e:
+            print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
+
 
     @staticmethod
     def _repeat_scrape_single_interval(ticker, interval, start, end):

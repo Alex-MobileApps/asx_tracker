@@ -1,7 +1,6 @@
 from asx_tracker.menu.home_menu import HomeMenu
 from asx_tracker.controller import Controller
 from asx_tracker.database.database import Database
-from asx_tracker.utils import Utils
 
 if __name__ == "__main__":
     try:

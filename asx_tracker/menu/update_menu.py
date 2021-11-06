@@ -23,35 +23,29 @@ class UpdateMenu(Menu):
         print()
         comp_url = UpdateMenu.set_comp_url()
         print()
-        warn = False
 
         # Download new companies
         print('Downloading new company names ...')
-        if not UpdateMenu.scrape_single(Scraper.scrape_companies, comp_url):
-            warn = True
+        UpdateMenu.scrape_single(Scraper.scrape_companies, comp_url)
         print()
 
         # Download new ETFs
         print('Downloading new ETF names ...')
-        if not UpdateMenu.scrape_single(Scraper.scrape_etfs):
-            warn = True
+        UpdateMenu.scrape_single(Scraper.scrape_etfs)
         print()
 
         # Download daily
         print('Downloading daily data ...')
-        if not UpdateMenu.scrape_single(Scraper.scrape_daily):
-            warn = True
+        UpdateMenu.scrape_single(Scraper.scrape_daily)
         print()
 
         # Download intraday
         print('Downloading intraday data ...')
-        if not UpdateMenu.scrape_single(Scraper.scrape_intraday):
-            warn = True
+        UpdateMenu.scrape_single(Scraper.scrape_intraday)
 
         # Complete
         Printer.divider()
-        warn_txt = 'WARNING: Some downloads failed' if warn else 'Download successful'
-        input(f'{warn_txt} (press Enter to continue)')
+        input(f'Press Enter to continue')
         controller.pop()
 
 
@@ -62,7 +56,7 @@ class UpdateMenu(Menu):
             print(f'{Utils.CLEAR_LINE}  complete ({count} added)\t\t\t')
             return True
         except Exception as e:
-            print('  FAILED', f'({e})')
+            print('  FAILED:', e)
             return False
 
 

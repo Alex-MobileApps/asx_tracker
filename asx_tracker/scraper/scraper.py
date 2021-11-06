@@ -100,9 +100,10 @@ class Scraper():
     @staticmethod
     def _scrape_daily_internal(ticker, fetched_date, close, date_col):
         start = fetched_date + 1
-        if start < close:
-            return Scraper._insert_interval(ticker, Database.insert_daily, Scraper._INTERVAL_DAILY, start, close, date_col)
-        return 0
+        if start >= close:
+            return 0
+        count = Scraper._insert_interval(ticker, Database.insert_daily, Scraper._INTERVAL_DAILY, start, close, date_col)
+        return count if count is not None else 0
 
 
     @staticmethod
@@ -129,7 +130,6 @@ class Scraper():
             return count
         except Exception as e:
             print(f'{Utils.CLEAR_LINE}  FAILED: {ticker} - {e} ')
-        return 0
 
 
     @staticmethod

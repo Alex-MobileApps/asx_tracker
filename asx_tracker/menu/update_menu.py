@@ -26,22 +26,22 @@ class UpdateMenu(Menu):
 
         # Download new companies
         print('Downloading new company names ...')
-        UpdateMenu.scrape_single(Scraper.scrape_companies, comp_url)
+        UpdateMenu.download_single(Scraper.download_companies, comp_url)
         print()
 
         # Download new ETFs
         print('Downloading new ETF names ...')
-        UpdateMenu.scrape_single(Scraper.scrape_etfs)
+        UpdateMenu.download_single(Scraper.download_etfs)
         print()
 
         # Download daily
         print('Downloading daily data ...')
-        UpdateMenu.scrape_single(Scraper.scrape_daily)
+        UpdateMenu.download_single(Scraper.download_daily)
         print()
 
         # Download intraday
         print('Downloading intraday data ...')
-        UpdateMenu.scrape_single(Scraper.scrape_intraday)
+        UpdateMenu.download_single(Scraper.download_intraday)
 
         # Complete
         Printer.divider()
@@ -50,13 +50,13 @@ class UpdateMenu(Menu):
 
 
     @staticmethod
-    def scrape_single(fn, *args):
+    def download_single(fn, *args):
         try:
             count = fn(*args)
-            print(f'{Utils.CLEAR_LINE}  complete ({count} added)\t\t\t')
+            print(f'{Utils.CLEAR_LINE}  complete ({count} added)')
             return True
         except Exception as e:
-            print('  FAILED:', e)
+            print(f'{Utils.CLEAR_LINE}  FAILED: {e}')
             return False
 
 

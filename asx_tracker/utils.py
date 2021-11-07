@@ -2,7 +2,7 @@ import os
 
 class Utils():
 
-    _USER_AGENT = 'Mozilla/5.0'
+    USER_AGENT = 'Mozilla/5.0'
     CLEAR_LINE = '\x1b[2K\r'
 
     @staticmethod

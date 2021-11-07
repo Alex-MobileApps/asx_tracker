@@ -145,7 +145,7 @@ class Scraper():
         start_time = time()
         # Scrape
         url = Scraper._url_yfinance(ticker + Scraper._TICKER_EXT, interval, start, end)
-        data = requests.get(url, headers={'User-Agent':Utils._USER_AGENT})
+        data = requests.get(url, headers={'User-Agent':Utils.USER_AGENT})
 
         # Failed request
         if data.status_code != 200:

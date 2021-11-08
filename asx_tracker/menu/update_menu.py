@@ -34,14 +34,14 @@ class UpdateMenu(Menu):
         UpdateMenu.download_single(Scraper.download_etfs)
         print()
 
+        # Download intraday
+        print('Downloading intraday data ...')
+        UpdateMenu.download_single(Scraper.download_intraday)
+
         # Download daily
         print('Downloading daily data ...')
         UpdateMenu.download_single(Scraper.download_daily)
         print()
-
-        # Download intraday
-        print('Downloading intraday data ...')
-        UpdateMenu.download_single(Scraper.download_intraday)
 
         # Complete
         Printer.divider()

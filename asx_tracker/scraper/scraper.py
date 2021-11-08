@@ -128,7 +128,7 @@ class Scraper():
 
         # Setup data
         count = 0
-        data = Database.fetch_listings(Database.COL_TICKER, date_col)
+        data = Database.fetch_all_listings(Database.COL_TICKER, date_col)
         len_data = len(data)
         params = {Scraper._PARAM_INTERVAL: interval}
 

@@ -85,10 +85,19 @@ class Database():
         return Database._execute(query, values=data, fetch=False)
 
     @staticmethod
-    def fetch_listings(*cols):
-        sel_cols = "*" if cols is None else ",".join(cols)
+    def fetch_all_listings(*cols):
+        sel_cols = Database._set_cols(cols)
         query = f"""
-        SELECT {sel_cols} FROM {Database.TAB_LISTING} ORDER BY {Database.COL_TICKER}
+        SELECT {sel_cols} FROM {Database.TAB_LISTING}
+        ORDER BY {Database.COL_TICKER}
+        """
+        return Database._execute(query)
+
+    @staticmethod
+    def fetch_single_listing(ticker, *cols):
+        sel_cols = Database._set_cols(cols)
+        query = f"""
+        SELECT {sel_cols} FROM {Database.TAB_LISTING} WHERE {Database.COL_TICKER} = '{ticker}' LIMIT 1
         """
         return Database._execute(query)
 
@@ -107,20 +116,36 @@ class Database():
 
     @staticmethod
     def insert_intraday(df):
-        return Database._insert_daily_intraday(df, Database.TAB_INTRADAY)
+        return Database._insert_intraday_or_daily(df, Database.TAB_INTRADAY)
+
+    @staticmethod
+    def fetch_all_intraday(*cols):
+        return Database._fetch_all_intraday_or_daily(Database.TAB_INTRADAY, *cols)
+
+    @staticmethod
+    def fetch_single_intraday(ticker, *cols, start=None, end=None):
+        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_INTRADAY, *cols, start=start, end=end)
 
 
     # Daily
 
     @staticmethod
     def insert_daily(df):
-        return Database._insert_daily_intraday(df, Database.TAB_DAILY)
+        return Database._insert_intraday_or_daily(df, Database.TAB_DAILY)
+
+    @staticmethod
+    def fetch_all_daily(*cols):
+        return Database._fetch_all_intraday_or_daily(Database.TAB_DAILY, *cols)
+
+    @staticmethod
+    def fetch_single_daily(ticker, *cols, start=None, end=None):
+        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_DAILY, *cols, start=start, end=end)
 
 
     # Internal
 
     @staticmethod
-    def _insert_daily_intraday(df, table):
+    def _insert_intraday_or_daily(df, table):
         data = []
         for i in range(len(df)):
             row = df.iloc[i]
@@ -132,3 +157,28 @@ class Database():
         (?,?,?,?,?,?,?)
         """
         return Database._execute(query, values=data, fetch=False)
+
+    @staticmethod
+    def _fetch_all_intraday_or_daily(table, *cols):
+        sel_cols = Database._set_cols(cols)
+        query = f"""
+        SELECT {sel_cols} FROM {table}
+        ORDER BY {Database.COL_TICKER}, {Database.COL_DATE}
+        """
+        return Database._execute(query)
+
+    @staticmethod
+    def _fetch_single_intraday_or_daily(ticker, table, *cols, start=None, end=None):
+        sel_cols = Database._set_cols(cols)
+        query = [
+            f"SELECT {sel_cols} FROM {table} WHERE {Database.COL_TICKER} = '{ticker}'",
+            '',
+            f'ORDER BY {Database.COL_DATE}']
+        if start is not None and end is not None:
+            query[1] = f'AND {Database.COL_DATE} BETWEEN {start} AND {end}'
+        query = ' '.join(query)
+        return Database._execute(query)
+
+    @staticmethod
+    def _set_cols(cols):
+        return "*" if cols is None else ",".join(cols)

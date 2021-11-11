@@ -1,10 +1,11 @@
-import matplotlib.pyplot as plt
 import mplfinance
 import pandas as pd
 from asx_tracker.date import Date
 from asx_tracker.database.database import Database
 
 class Plot():
+
+    # Static variables
 
     _COL_OPEN = 'Open'
     _COL_HIGH = 'High'
@@ -18,6 +19,19 @@ class Plot():
 
     @staticmethod
     def intraday(ticker, start, end, **kwargs):
+        """
+        Plots intraday data for a ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to plot data for
+        start : int
+            Timestamp of start date of the plot
+        end : int
+            Timestamp of end date of the plot
+        """
+
         title = f'{ticker} intraday data'
         Plot._plot_intraday_or_daily(ticker, Database.fetch_single_intraday, start, end, title=title, **kwargs)
 
@@ -26,6 +40,11 @@ class Plot():
 
     @staticmethod
     def daily(ticker, start, end, **kwargs):
+        """
+        Plots whole day data for a ticker.
+        See Plot.intraday
+        """
+
         title = f'{ticker} daily data'
         Plot._plot_intraday_or_daily(ticker, Database.fetch_single_daily, start, end, title=title, **kwargs)
 
@@ -34,6 +53,22 @@ class Plot():
 
     @staticmethod
     def _plot_intraday_or_daily(ticker, fetch_fn, start, end, **kwargs):
+        """
+        Plots one of intraday or daily data for a ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to plot data for
+        fetch_fn : function
+            Database.fetch_single_intraday : if plotting intraday data
+            Database.fetch_single_daily : if plotting daily data
+        start : int
+            Timestamp of start date of the plot
+        end : int
+            Timestamp of end date of the plot
+        """
+
         df = Plot._fetch_intraday_or_daily(ticker, fetch_fn, start, end)
         if df is None:
             print(f'No data found for {ticker}')
@@ -43,6 +78,19 @@ class Plot():
 
     @staticmethod
     def _fetch_intraday_or_daily(ticker, fetch_fn, start, end):
+        """
+        Fetches a DataFrame of intraday or daily data for a ticker
+
+        Parameters
+        ----------
+        See Plot._plot_intraday_or_daily
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with intraday or daily data for a ticker
+        """
+
         fetch_cols = [Database.COL_DATE, Database.COL_OPEN, Database.COL_HIGH, Database.COL_LOW, Database.COL_CLOSE, Database.COL_VOL]
         data = fetch_fn(ticker, *fetch_cols, start=start, end=end)
         if len(data) == 0:
@@ -58,62 +106,19 @@ class Plot():
 
     @staticmethod
     def _plot(df, block=True, **kwargs):
+        """
+        Plots a DataFrame using mplfinance
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame to plot
+        block : bool, optional
+            Whether or not to block the main thread, by default True
+        """
+
         if 'volume' not in kwargs:
             kwargs['volume'] = True
         if 'type' not in kwargs:
             kwargs['type'] = Plot._DEF_TYPE
         mplfinance.plot(df, block=block, **kwargs)
-
-
-    @staticmethod
-    def close():
-        plt.close('all')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #@staticmethod
-    #def _plot(df, x_col, y_col, figsize=None, xlab='Time', ylab='Value', ax=None):
-    #    if ax is None:
-    #        _, ax = plt.subplots(figsize=figsize)
-    #    
-    #    # X
-    #    x = np.arange(len(df))
-    #    x_txt = list(df[x_col])
-    #    
-    #    # Y
-    #    y = list(df[y_col])
-    #    y_txt = ['${:.2f}'.format(yi) for yi in y]
-    #    print(len(x_txt))
-    #    print(len(y_txt))
-    #    print(len(x))
-    #    print(len(y))
-    #    
-    #    # Plot
-    #    ax.plot(x, y)
-    #    ax.set_xlabel(xlab)
-    #    ax.set_ylabel(ylab)
-    #    ax.set_xticks([])
-#
-    #    # Make interactive
-    #    mplcursors.cursor(ax, hover=True).connect('add', lambda sel: Plot._plot_annotate(sel, x_txt, y_txt))
-    #    plt.show(block=False)
-
-    @staticmethod
-    def _plot_annotate(sel, x_txt, y_txt):
-        label = sel.artist.get_label()
-        x = int(round(sel.target.index))
-        sel.annotation.set_text(f'{label}\n{x_txt[x]}\n{y_txt[label][x]}')

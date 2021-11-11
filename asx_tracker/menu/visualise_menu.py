@@ -6,6 +6,8 @@ from asx_tracker.printer import Printer
 
 class VisualiseMenu(Menu):
 
+    # Static variables
+
     _NOT_SET = 'Not set'
     _DEF_START = Date.MIN
     _DEF_END = Date.MAX
@@ -14,6 +16,9 @@ class VisualiseMenu(Menu):
     _VAR_INTRADAY = 'Intraday'
     _DEF_VARIATION = _VAR_DAILY
     _PLT_TYPES = {'Line':'line', 'Candlestick':'candle', 'OHLC':'ohlc', 'Renko':'renko', 'Hollow and filled':'hollow_and_filled'}
+
+
+    # Constructor
 
     def __init__(self):
         super().__init__(title = 'Visualise')
@@ -25,7 +30,14 @@ class VisualiseMenu(Menu):
         self.mav = None
         self.set_options()
 
+
+    # Menu options
+
     def set_options(self):
+        """
+        Sets the main menu's options, including the current settings for each option
+        """
+
         fn = lambda a: a if a is not None else VisualiseMenu._NOT_SET
         self.options = [
             f'Set ticker:\t\t{fn(self.ticker)}',
@@ -38,8 +50,18 @@ class VisualiseMenu(Menu):
             'Back'
         ]
 
+
     def handle_option(self, controller):
-        option = self.select_option(self.options)
+        """
+        Handles selection of a menu option
+
+        Parameters
+        ----------
+        controller : Controller
+            Controller that is managing the program
+        """
+
+        option = Menu.select_option(self.options)
         if option == 8:
             return controller.pop()
         print()
@@ -64,6 +86,10 @@ class VisualiseMenu(Menu):
     # Ticker
 
     def set_ticker(self):
+        """
+        Sets the selected ASX ticker
+        """
+
         ticker = input('Enter ticker: ').upper()
         if Database.fetch_single_listing(ticker, Database.COL_TICKER):
             self.ticker = ticker
@@ -74,36 +100,56 @@ class VisualiseMenu(Menu):
     # Start date
 
     def set_start(self):
+        """
+        Sets the fetch start date as a timestamp
+        """
+
         self.start = input('Enter start date: ')
 
 
     # End date
 
     def set_end(self):
+        """
+        Sets the fetch end date as a timestamp
+        """
+
         self.end = input('Enter end date: ')
 
 
     # Plot type
 
     def set_plt_type(self):
+        """
+        Sets the type of plot visualisation to use
+        """
+
         options = list(VisualiseMenu._PLT_TYPES.keys())
         Printer.options(options)
-        option = self.select_option(options)
+        option = Menu.select_option(options)
         self.plt_type = options[option-1]
 
 
     # Daily or Intraday variation
 
     def set_variation(self):
+        """
+        Sets the data variation (daily or intraday) to use in the plot
+        """
+
         options = [VisualiseMenu._VAR_DAILY, VisualiseMenu._VAR_INTRADAY]
         Printer.options(options)
-        option = self.select_option(options)
+        option = Menu.select_option(options)
         self.variation = options[option-1]
 
 
     # Moving average
 
     def set_mav(self):
+        """
+        Sets a number of moving averages to include in the plot
+        """
+
         mav = input('Enter moving averages (0 for None): ')
         try:
             mav = VisualiseMenu._str_to_mav(mav)
@@ -111,22 +157,12 @@ class VisualiseMenu(Menu):
         except:
             Printer.ack("Values should be integers, e.g. '3' or '3,5'")
 
-    @staticmethod
-    def _str_to_mav(mav):
-        mav = mav.replace(' ', '')
-        mav = [int(m) for m in mav.split(',')]
-        for i in reversed(range(len(mav))):
-            if mav[i] <= 0:
-                mav.pop(i)
-        if len(mav) > 0:
-            return mav
-
-    @staticmethod
-    def _mav_to_str(mav):
-        if mav is not None:
-            return ','.join([str(m) for m in mav])
 
     def visualise(self):
+        """
+        Presents a plot with the selected settings
+        """
+
         if self.ticker is None:
             Printer.ack('Ticker is not set')
             return
@@ -135,3 +171,50 @@ class VisualiseMenu(Menu):
         if self.mav is not None: kwargs['mav'] = VisualiseMenu._str_to_mav(self.mav)
         fn = Plot.daily if self.variation == VisualiseMenu._VAR_DAILY else Plot.intraday
         fn(self.ticker, self.start, self.end, type=VisualiseMenu._PLT_TYPES[self.plt_type], **kwargs)
+
+
+    # Internal
+
+    @staticmethod
+    def _str_to_mav(mav):
+        """
+        Converts a string into a sequence of moving averages
+
+        Parameters
+        ----------
+        mav : str
+            String separated by ',' to extract moving averages from
+
+        Returns
+        -------
+        list or None
+            Sequence of moving averages if mav can be converted, else None
+        """
+
+        mav = mav.replace(' ', '')
+        mav = [int(m) for m in mav.split(',')]
+        for i in reversed(range(len(mav))):
+            if mav[i] <= 0:
+                mav.pop(i)
+        if len(mav) > 0:
+            return mav
+
+
+    @staticmethod
+    def _mav_to_str(mav):
+        """
+        Convert a sequence of moving averages into a string to print
+
+        Parameters
+        ----------
+        mav : list
+            Sequence of moving average lengths
+
+        Returns
+        -------
+        str or None
+            String representation of the moving averages if mav is not None, else None
+        """
+
+        if mav is not None:
+            return ','.join([str(m) for m in mav])

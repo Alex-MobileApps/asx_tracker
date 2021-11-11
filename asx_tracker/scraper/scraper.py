@@ -7,7 +7,8 @@ from asx_tracker.date import Date
 
 class Scraper():
 
-    # Column names when scraping
+    # Static variables
+
     _COL_ETP_TICKER     = 'ASX Code'
     _COL_ETP_MGMT_PCT   = 'Management Cost %'
     _COL_ETP_NAME       = 'Exposure'
@@ -22,11 +23,9 @@ class Scraper():
     _COL_API_CLOSE      = 'close'
     _COL_API_VOL        = 'volume'
 
-    # URLs
     _URL_COM            = 'https://www2.asx.com.au/markets/trade-our-cash-market/directory'
     _URL_ETP            = 'https://www2.asx.com.au/markets/trade-our-cash-market/asx-investment-products-directory/etps'
 
-    # Query parameters
     _INTERVAL_DAILY     = '1d'
     _INTERVAL_INTRADAY  = '1m'
     _RANGE_DAILY        = '10y'
@@ -35,7 +34,6 @@ class Scraper():
     _PARAM_RANGE        = 'range'
     _PARAM_INTERVAL     = 'interval'
 
-    # Misc
     _TICKER_EXT         = '.AX'
     _METHOD_DAILY       = 'daily'
     _METHOD_INTRADAY    = 'intraday'
@@ -47,6 +45,15 @@ class Scraper():
 
     @staticmethod
     def download_etfs():
+        """
+        Returns a DataFrame containing all listed ASX ETFs
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame of ASX ETFs
+        """
+
         dfs = pd.read_html(Scraper._URL_ETP, header=0)
         df = pd.concat([df[[Scraper._COL_ETP_TICKER,Scraper._COL_ETP_NAME,Scraper._COL_ETP_MGMT_PCT]][df[Scraper._COL_ETP_TYPE] == 'ETF'] for df in dfs], axis=0)
         df.rename(columns={Scraper._COL_ETP_TICKER: Database.COL_TICKER, Scraper._COL_ETP_NAME: Database.COL_NAME, Scraper._COL_ETP_MGMT_PCT: Database.COL_MGMT_PCT}, inplace=True)
@@ -62,6 +69,20 @@ class Scraper():
 
     @staticmethod
     def download_companies(url):
+        """
+        Returns a DataFrame containing all listed ASX companies
+
+        Parameters
+        ----------
+        url : str
+            Destination URL on ASX website containing CSV of companies
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame of ASX companies
+        """
+
         df = pd.read_csv(url, header=0)[[Scraper._COL_COM_TICKER, Scraper._COL_COM_NAME, Scraper._COL_COM_LIST_DATE]]
         df.dropna(subset=[Scraper._COL_COM_LIST_DATE], inplace=True)
         df.drop(Scraper._COL_COM_LIST_DATE, axis=1, inplace=True)
@@ -222,7 +243,7 @@ class Scraper():
         ----------
         ticker : str
             Listing's ticker
-        insert_fn : fn
+        insert_fn : function
             Database.insert_intraday : Save to intraday database table
             Database.insert_daily : Save to daily database table
         params : dict

@@ -23,7 +23,214 @@ class Database():
     _PATH_DB = 'asx_tracker/database/database.db'
 
 
-    # Execute
+    # Create tables
+
+    @staticmethod
+    def create_tables():
+        """
+        Creates the required tables for the program
+        """
+
+        Database._execute(Sql.FOREIGN_KEYS, fetch=False)
+        Database._execute(Sql.CREATE_TAB_LISTING, fetch=False)
+        Database._execute(Sql.CREATE_TAB_INTRADAY, fetch=False)
+        Database._execute(Sql.CREATE_TAB_DAILY, fetch=False)
+
+
+    # Listings
+
+    @staticmethod
+    def insert_listings(df):
+        """
+        Inserts ASX listings into the database
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Listing to insert
+
+        Returns
+        -------
+        int
+            Number of rows inserted
+        """
+
+        data = []
+        for i in range(len(df)):
+            row = df.iloc[i]
+            data.append((row[Database.COL_TICKER], row[Database.COL_NAME], int(row[Database.COL_MGMT_PCT])))
+        query = f"""
+        INSERT OR IGNORE INTO {Database.TAB_LISTING}
+        ({Database.COL_TICKER}, {Database.COL_NAME}, {Database.COL_MGMT_PCT})
+        VALUES
+        (?,?,?)
+        """
+        return Database._execute(query, values=data, fetch=False)
+
+
+    @staticmethod
+    def fetch_all_listings(*cols):
+        """
+        Retrieve all ASX listings from the database
+
+        Returns
+        -------
+        list
+            Fetched listings
+        """
+
+        sel_cols = Database._set_cols(cols)
+        query = f"""
+        SELECT {sel_cols} FROM {Database.TAB_LISTING}
+        ORDER BY {Database.COL_TICKER}
+        """
+        return Database._execute(query)
+
+
+    @staticmethod
+    def fetch_single_listing(ticker, *cols):
+        """
+        Retrieve ASX listing data for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to fetch
+
+        Returns
+        -------
+        list
+            Fetched listings
+        """
+
+        sel_cols = Database._set_cols(cols)
+        query = f"""
+        SELECT {sel_cols} FROM {Database.TAB_LISTING} WHERE {Database.COL_TICKER} = '{ticker}' LIMIT 1
+        """
+        return Database._execute(query)
+
+
+    @staticmethod
+    def update_listings_date(ticker, fetched_date, date_col):
+        """
+        Change when the last save of daily or intraday data happened in the database for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to update
+        fetched_date : int
+            Timestamp in the last inserted entry
+        date_col
+            Database.COL_LAST_INTRADAY : update last intraday save
+            Database.COL_LAST_DAILY : update last daily save
+
+        Returns
+        -------
+        int
+            Number of entries modified
+        """
+
+        data = [(int(fetched_date),ticker)]
+        query = f"""
+        UPDATE {Database.TAB_LISTING}
+        SET {date_col} = ?
+        WHERE {Database.COL_TICKER} = ?
+        """
+        return Database._execute(query, values=data, fetch=False)
+
+
+    # Intraday
+
+    @staticmethod
+    def insert_intraday(df):
+        """
+        Inserts ASX intraday data into the database
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Intraday data to insert
+
+        Returns
+        -------
+        int
+            Number of rows inserted
+        """
+
+        return Database._insert_intraday_or_daily(df, Database.TAB_INTRADAY)
+
+
+    @staticmethod
+    def fetch_all_intraday(*cols):
+        """
+        Retrieve all ASX intraday data from the database
+
+        Returns
+        -------
+        list
+            Fetched intraday data
+        """
+
+        return Database._fetch_all_intraday_or_daily(Database.TAB_INTRADAY, *cols)
+
+
+    @staticmethod
+    def fetch_single_intraday(ticker, *cols, start=None, end=None):
+        """
+        Retrieve ASX intraday data for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to fetch
+        start : int
+            Timestamp of start date to fetch from
+        end : int
+            Timestamp of end date to fetch from
+
+        Returns
+        -------
+        list
+            Fetched listings
+        """
+
+        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_INTRADAY, *cols, start=start, end=end)
+
+
+    # Daily
+
+    @staticmethod
+    def insert_daily(df):
+        """
+        Inserts ASX daily data into the database.
+        See Database.insert_intraday
+        """
+
+        return Database._insert_intraday_or_daily(df, Database.TAB_DAILY)
+
+
+    @staticmethod
+    def fetch_all_daily(*cols):
+        """
+        Retrieve all ASX daily data from the database.
+        See Database.fetch_all_intraday
+        """
+
+        return Database._fetch_all_intraday_or_daily(Database.TAB_DAILY, *cols)
+
+
+    @staticmethod
+    def fetch_single_daily(ticker, *cols, start=None, end=None):
+        """
+        Retrieve ASX daily data for a single ticker.
+        See Database.fetch_single_intraday
+        """
+
+        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_DAILY, *cols, start=start, end=end)
+
+
+    # Internal
 
     @staticmethod
     def _execute(query, values=None, path=_PATH_DB, fetch=True):
@@ -58,92 +265,6 @@ class Database():
         return response
 
 
-    # Create tables
-
-    @staticmethod
-    def create_tables():
-        Database._execute(Sql.FOREIGN_KEYS, fetch=False)
-        Database._execute(Sql.CREATE_TAB_LISTING, fetch=False)
-        Database._execute(Sql.CREATE_TAB_INTRADAY, fetch=False)
-        Database._execute(Sql.CREATE_TAB_DAILY, fetch=False)
-
-
-    # Listings
-
-    @staticmethod
-    def insert_listings(df):
-        data = []
-        for i in range(len(df)):
-            row = df.iloc[i]
-            data.append((row[Database.COL_TICKER], row[Database.COL_NAME], int(row[Database.COL_MGMT_PCT])))
-        query = f"""
-        INSERT OR IGNORE INTO {Database.TAB_LISTING}
-        ({Database.COL_TICKER}, {Database.COL_NAME}, {Database.COL_MGMT_PCT})
-        VALUES
-        (?,?,?)
-        """
-        return Database._execute(query, values=data, fetch=False)
-
-    @staticmethod
-    def fetch_all_listings(*cols):
-        sel_cols = Database._set_cols(cols)
-        query = f"""
-        SELECT {sel_cols} FROM {Database.TAB_LISTING}
-        ORDER BY {Database.COL_TICKER}
-        """
-        return Database._execute(query)
-
-    @staticmethod
-    def fetch_single_listing(ticker, *cols):
-        sel_cols = Database._set_cols(cols)
-        query = f"""
-        SELECT {sel_cols} FROM {Database.TAB_LISTING} WHERE {Database.COL_TICKER} = '{ticker}' LIMIT 1
-        """
-        return Database._execute(query)
-
-    @staticmethod
-    def update_listings_date(ticker, fetched_date, date_col):
-        data = [(int(fetched_date),ticker)]
-        query = f"""
-        UPDATE {Database.TAB_LISTING}
-        SET {date_col} = ?
-        WHERE {Database.COL_TICKER} = ?
-        """
-        return Database._execute(query, values=data, fetch=False)
-
-
-    # Intraday
-
-    @staticmethod
-    def insert_intraday(df):
-        return Database._insert_intraday_or_daily(df, Database.TAB_INTRADAY)
-
-    @staticmethod
-    def fetch_all_intraday(*cols):
-        return Database._fetch_all_intraday_or_daily(Database.TAB_INTRADAY, *cols)
-
-    @staticmethod
-    def fetch_single_intraday(ticker, *cols, start=None, end=None):
-        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_INTRADAY, *cols, start=start, end=end)
-
-
-    # Daily
-
-    @staticmethod
-    def insert_daily(df):
-        return Database._insert_intraday_or_daily(df, Database.TAB_DAILY)
-
-    @staticmethod
-    def fetch_all_daily(*cols):
-        return Database._fetch_all_intraday_or_daily(Database.TAB_DAILY, *cols)
-
-    @staticmethod
-    def fetch_single_daily(ticker, *cols, start=None, end=None):
-        return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_DAILY, *cols, start=start, end=end)
-
-
-    # Internal
-
     @staticmethod
     def _insert_intraday_or_daily(df, table):
         data = []
@@ -158,6 +279,7 @@ class Database():
         """
         return Database._execute(query, values=data, fetch=False)
 
+
     @staticmethod
     def _fetch_all_intraday_or_daily(table, *cols):
         sel_cols = Database._set_cols(cols)
@@ -166,6 +288,7 @@ class Database():
         ORDER BY {Database.COL_TICKER}, {Database.COL_DATE}
         """
         return Database._execute(query)
+
 
     @staticmethod
     def _fetch_single_intraday_or_daily(ticker, table, *cols, start=None, end=None):
@@ -178,6 +301,7 @@ class Database():
             query[1] = f'AND {Database.COL_DATE} BETWEEN {start} AND {end}'
         query = ' '.join(query)
         return Database._execute(query)
+
 
     @staticmethod
     def _set_cols(cols):

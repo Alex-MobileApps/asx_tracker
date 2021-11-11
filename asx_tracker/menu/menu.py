@@ -14,6 +14,10 @@ class Menu():
     # Functionality
 
     def display(self):
+        """
+        Refreshes the screen with updated content
+        """
+
         Utils.clear()
         if self.title is not None:
             Printer.header(self.title)
@@ -25,7 +29,23 @@ class Menu():
             Printer.options(self.options)
         Printer.divider()
 
-    def select_option(self, options):
+
+    @staticmethod
+    def select_option(options):
+        """
+        Retrieves a user's selection from a list of options
+
+        Parameters
+        ----------
+        options : list
+            Sequence of options as strings to select from
+
+        Returns
+        -------
+        int
+            Number of the option selected
+        """
+
         len_options = len(options)
         while True:
             val = input('Select an option: ')
@@ -36,7 +56,4 @@ class Menu():
                 else:
                     return val
             except:
-                Menu._invalid(len_options)
-
-    def _invalid(n):
-        print(f'{Utils.CLEAR_LINE}Please select an option from 1 to {n}')
+                Printer.invalid_option(len_options)

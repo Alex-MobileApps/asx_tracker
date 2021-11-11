@@ -1,5 +1,7 @@
 class Sql():
 
+    # Static variables
+
     FOREIGN_KEYS = f"""
     PRAGMA foreign_keys = ON
     """

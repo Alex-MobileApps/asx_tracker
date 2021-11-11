@@ -6,12 +6,11 @@ from asx_tracker.utils import Utils
 class UpdateMenu(Menu):
     def __init__(self):
         super().__init__(
-            "Update data",
-            None,
-            ["Download new data (ETA: <time>)", "Back"])
+            title = "Update data",
+            options = ["Download new data", "Back"])
 
     def handle_option(self, controller):
-        option = self.select_option()
+        option = self.select_option(self.options)
         if option == 1:
             UpdateMenu.download(controller)
         else:

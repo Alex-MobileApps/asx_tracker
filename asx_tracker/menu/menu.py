@@ -5,7 +5,7 @@ class Menu():
 
     # Constructor
 
-    def __init__(self, title, subtitle, options):
+    def __init__(self, title=None, subtitle=None, options=None):
         self.title = title
         self.subtitle = subtitle
         self.options = options
@@ -15,18 +15,18 @@ class Menu():
 
     def display(self):
         Utils.clear()
-        if self.title:
+        if self.title is not None:
             Printer.header(self.title)
-        if self.subtitle:
+        if self.subtitle is not None:
             print(self.subtitle)
-            print()
-        if self.options:
-            for i, s in enumerate(self.options):
-                print(f'{i+1}. {s}')
-            Printer.divider()
+        if self.options is not None:
+            if self.subtitle is not None:
+                print()
+            Printer.options(self.options)
+        Printer.divider()
 
-    def select_option(self):
-        len_options = len(self.options)
+    def select_option(self, options):
+        len_options = len(options)
         while True:
             val = input('Select an option: ')
             try:

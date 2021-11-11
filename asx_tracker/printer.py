@@ -28,3 +28,18 @@ class Printer():
             print('=' * size)
         else:
             print('-' * size)
+
+
+    # Error message
+
+    @staticmethod
+    def ack(message):
+        input(f'{message} (Press Enter to continue)')
+
+
+    # Options
+
+    @staticmethod
+    def options(opts):
+        for i, s in enumerate(opts):
+            print(f'{i+1}. {s}')

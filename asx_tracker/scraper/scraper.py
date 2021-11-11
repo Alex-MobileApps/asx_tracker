@@ -50,6 +50,8 @@ class Scraper():
         dfs = pd.read_html(Scraper._URL_ETP, header=0)
         df = pd.concat([df[[Scraper._COL_ETP_TICKER,Scraper._COL_ETP_NAME,Scraper._COL_ETP_MGMT_PCT]][df[Scraper._COL_ETP_TYPE] == 'ETF'] for df in dfs], axis=0)
         df.rename(columns={Scraper._COL_ETP_TICKER: Database.COL_TICKER, Scraper._COL_ETP_NAME: Database.COL_NAME, Scraper._COL_ETP_MGMT_PCT: Database.COL_MGMT_PCT}, inplace=True)
+        df[Database.COL_TICKER] = df[Database.COL_TICKER].str.upper()
+        df[Database.COL_NAME] = df[Database.COL_NAME].fillna('')
         df[Database.COL_MGMT_PCT] *= 100
         df[Database.COL_MGMT_PCT] = df[Database.COL_MGMT_PCT].astype(int)
         df = df.groupby(Database.COL_TICKER, as_index=False).max()
@@ -64,6 +66,7 @@ class Scraper():
         df.dropna(subset=[Scraper._COL_COM_LIST_DATE], inplace=True)
         df.drop(Scraper._COL_COM_LIST_DATE, axis=1, inplace=True)
         df.rename(columns={Scraper._COL_COM_TICKER: Database.COL_TICKER, Scraper._COL_COM_NAME: Database.COL_NAME}, inplace=True)
+        df[Database.COL_TICKER] = df[Database.COL_TICKER].str.upper()
         df[Database.COL_NAME] = df[Database.COL_NAME].fillna('')
         df[Database.COL_MGMT_PCT] = 0
         return Database.insert_listings(df)

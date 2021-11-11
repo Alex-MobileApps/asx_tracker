@@ -1,6 +1,7 @@
 from time import time
 from datetime import datetime, timedelta
 from pytz import timezone
+from asx_tracker.utils import Utils
 
 class Date():
 
@@ -10,9 +11,13 @@ class Date():
     DAY = 86400
     WEEK = 604800
     YEAR_365 = 31536000
+    MIN = 0
+    MAX = 253402261199
 
     _TZ_SYDNEY = 'Australia/Sydney'
+    _TZ_SYDNEY_INFO = timezone(_TZ_SYDNEY)
     _HOUR_CLOSE = 19
+    _DATE_FORMAT = '%d %b %Y %I:%M%p'
 
     @staticmethod
     def timestamp_now(offset=0):
@@ -41,3 +46,15 @@ class Date():
             date_now -= timedelta(days=1)
         date_now = date_now.replace(hour=Date._HOUR_CLOSE)
         return int(date_now.timestamp())
+
+    @staticmethod
+    def timestamp_to_datetime(timestamps):
+        fn = lambda t: datetime.fromtimestamp(t, tz=timezone(Date._TZ_SYDNEY))
+        if Utils.has_len(timestamps):
+            return [fn(t) for t in timestamps]
+        return fn(timestamps)
+
+    @staticmethod
+    def timestamp_to_date_str(timestamp):
+        date = Date.timestamp_to_datetime(timestamp)
+        return date.strftime(format=Date._DATE_FORMAT)

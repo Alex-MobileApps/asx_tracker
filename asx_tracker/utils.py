@@ -35,3 +35,20 @@ class Utils():
             return True
         except:
             return False
+
+
+    @staticmethod
+    def is_int(*M):
+        """
+        Returns whether or not objects can be converted to integers
+
+        Returns
+        -------
+        bool
+            Whether or not objects can be converted to integers
+        """
+
+        for m in M:
+            try: int(m)
+            except: return False
+        return True

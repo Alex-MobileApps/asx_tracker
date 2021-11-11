@@ -1,5 +1,5 @@
 from time import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pytz import timezone
 from asx_tracker.utils import Utils
 

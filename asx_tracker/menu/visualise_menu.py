@@ -1,6 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.plot import Plot
 from asx_tracker.date import Date
+from asx_tracker.date_parser import DateParser
 from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
 
@@ -104,7 +105,13 @@ class VisualiseMenu(Menu):
         Sets the fetch start date as a timestamp
         """
 
-        self.start = input('Enter start date: ')
+        start = VisualiseMenu._get_date('Enter start date: ')
+        if start is None:
+            return
+        if start > self.end:
+            Printer.ack('Start date must not be greater than the end date')
+        else:
+            self.start = start
 
 
     # End date
@@ -114,7 +121,25 @@ class VisualiseMenu(Menu):
         Sets the fetch end date as a timestamp
         """
 
-        self.end = input('Enter end date: ')
+        end = VisualiseMenu._get_date('Enter end date: ')
+        if end is None:
+            return
+        if end < self.start:
+            Printer.ack('End date must not be less than the start date')
+        else:
+            self.end = end
+
+
+    @staticmethod
+    def _get_date(message):
+        txt = input(message)
+        date = DateParser.parse(txt)
+        if date is None:
+            Printer.ack(f'{txt} is not a valid date')
+        elif date < Date.MIN or date > Date.MAX:
+            Printer.ack(f'Date must be between {Date.timestamp_to_date_str(Date.MIN)} and {Date.timestamp_to_date_str(Date.MAX)}')
+        else:
+            return date
 
 
     # Plot type
@@ -166,7 +191,6 @@ class VisualiseMenu(Menu):
         if self.ticker is None:
             Printer.ack('Ticker is not set')
             return
-        print('Close plot to continue')
         kwargs = {}
         if self.mav is not None: kwargs['mav'] = VisualiseMenu._str_to_mav(self.mav)
         fn = Plot.daily if self.variation == VisualiseMenu._VAR_DAILY else Plot.intraday

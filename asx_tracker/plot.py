@@ -2,6 +2,7 @@ import mplfinance
 import pandas as pd
 from asx_tracker.date import Date
 from asx_tracker.database.database import Database
+from asx_tracker.printer import Printer
 
 class Plot():
 
@@ -67,12 +68,18 @@ class Plot():
             Timestamp of start date of the plot
         end : int
             Timestamp of end date of the plot
+
+        Returns
+        -------
+        bool
+            Whether or not data was found for the specified ticker and dates
         """
 
         df = Plot._fetch_intraday_or_daily(ticker, fetch_fn, start, end)
         if df is None:
-            print(f'No data found for {ticker}')
+            Printer.ack(f'No data found for {ticker} between the specified dates')
         else:
+            print('Close plot to continue')
             Plot._plot(df, **kwargs)
 
 

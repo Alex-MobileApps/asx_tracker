@@ -9,6 +9,8 @@ Libraries
 - pytz
 - requests
 - pandas
+- matplotlib
+- mplfinance
 
 
 ## Installation and usage

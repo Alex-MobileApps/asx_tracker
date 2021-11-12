@@ -174,7 +174,7 @@ class Date():
             if len(txt) > 3:
                 hour, min = txt[3].split(':')
                 time[3] = int(hour)
-                if min.endswith('PM'):
+                if min.endswith('PM') and time[3] != 12:
                     time[3] += 12
                 min = min.replace('AM', '')
                 min = min.replace('PM', '')

@@ -1,5 +1,5 @@
 from time import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 from asx_tracker.utils import Utils
 
@@ -21,7 +21,9 @@ class Date():
     _HOUR_CLOSE     = 19
     _DATE_FORMAT    = '%d %b %Y %I:%M%p'
     _MONTH_MAP      = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
-
+    _NOW            = 'NOW'
+    _MIN            = 'MIN'
+    _MAX            = 'MAX'
 
     # Timestamps
 
@@ -150,25 +152,35 @@ class Date():
         if Utils.is_int(txt):
             return int(txt)
 
-        txt = txt.upper()
-        txt = txt.split(' ')
-        txt = [t for t in txt if t != '']
+        # Now, Min, Max
+        txt = txt.upper().strip()
+        if txt == Date._NOW:
+            now = Date._TZ_SYDNEY_INFO.localize(datetime.now())
+            now -= timedelta(seconds=now.second)
+            return now.timestamp()
+        elif txt == Date._MIN:
+            return Date.MIN
+        elif txt == Date._MAX:
+            return Date.MAX
 
         # Parse text
+        txt = txt.split(' ')
+        txt = [t for t in txt if t != '']
         time = [0] * 6 # year, month, day, hour, minute, second
         try:
             time[0] = int(txt[2])
             time[1] = Date._MONTH_MAP[txt[1]]
             time[2] = int(txt[0])
             if len(txt) > 3:
-                hour, min = time[3].split(':')
+                hour, min = txt[3].split(':')
                 time[3] = int(hour)
                 if min.endswith('PM'):
                     time[3] += 12
                 min = min.replace('AM', '')
                 min = min.replace('PM', '')
-                time[4] = min
-            date = datetime(*time, tzinfo=Date._TZ_SYDNEY_INFO)
-            return datetime.timestamp(date)
+                time[4] = int(min)
+            utc_dt = datetime(*time)
+            loc_dt = Date._TZ_SYDNEY_INFO.localize(utc_dt)
+            return int(loc_dt.timestamp())
         except:
             return None

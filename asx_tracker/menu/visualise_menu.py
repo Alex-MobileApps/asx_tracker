@@ -1,7 +1,6 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.plot import Plot
 from asx_tracker.date import Date
-from asx_tracker.date_parser import DateParser
 from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
 

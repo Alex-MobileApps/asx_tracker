@@ -24,6 +24,20 @@ class DateParser():
 
     @staticmethod
     def parse(txt):
+        """
+        Parse a user input string into a timestamp
+
+        Parameters
+        ----------
+        txt : str
+            User input string
+
+        Returns
+        -------
+        int or None
+            int if the string can be converted, else None
+        """
+
         if len(txt) == 0:
             return
 
@@ -32,5 +46,4 @@ class DateParser():
             return int(txt)
 
         # Parse string
-        # need to allow low, high, now, start, end, hour, minute, day, week, month, year, /, _STR_MAP
-        txt = txt.upper()
+        return Date.date_str_to_timestamp(txt)

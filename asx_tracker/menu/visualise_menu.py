@@ -133,7 +133,7 @@ class VisualiseMenu(Menu):
     @staticmethod
     def _get_date(message):
         txt = input(message)
-        date = DateParser.parse(txt)
+        date = Date.date_str_to_timestamp(txt)
         if date is None:
             Printer.ack(f'{txt} is not a valid date')
         elif date < Date.MIN or date > Date.MAX:

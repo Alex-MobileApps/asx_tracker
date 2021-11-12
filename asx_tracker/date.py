@@ -20,6 +20,7 @@ class Date():
     _TZ_SYDNEY_INFO = timezone(_TZ_SYDNEY)
     _HOUR_CLOSE     = 19
     _DATE_FORMAT    = '%d %b %Y %I:%M%p'
+    _MONTH_MAP      = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
 
 
     # Timestamps
@@ -127,3 +128,47 @@ class Date():
 
         date = Date.timestamp_to_datetime(timestamp)
         return date.strftime(format=Date._DATE_FORMAT)
+
+
+    @staticmethod
+    def date_str_to_timestamp(txt):
+        """
+        Convert a string to a timestamp
+
+        Parameters
+        ----------
+        txt : str
+            Date string to convert
+
+        Returns
+        -------
+        int or None
+            Timestamp if conversion is successful, else None
+        """
+
+        # Parse timestamp string
+        if Utils.is_int(txt):
+            return int(txt)
+
+        txt = txt.upper()
+        txt = txt.split(' ')
+        txt = [t for t in txt if t != '']
+
+        # Parse text
+        time = [0] * 6 # year, month, day, hour, minute, second
+        try:
+            time[0] = int(txt[2])
+            time[1] = Date._MONTH_MAP[txt[1]]
+            time[2] = int(txt[0])
+            if len(txt) > 3:
+                hour, min = time[3].split(':')
+                time[3] = int(hour)
+                if min.endswith('PM'):
+                    time[3] += 12
+                min = min.replace('AM', '')
+                min = min.replace('PM', '')
+                time[4] = min
+            date = datetime(*time, tzinfo=Date._TZ_SYDNEY_INFO)
+            return datetime.timestamp(date)
+        except:
+            return None

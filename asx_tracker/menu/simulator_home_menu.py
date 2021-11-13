@@ -1,10 +1,11 @@
 from asx_tracker.menu.menu import Menu
+from asx_tracker.menu.simulator_new_menu import SimulatorNewMenu
 
 class SimulatorHomeMenu(Menu):
 
     # Constructor
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__(
             title = 'Trading simulator',
             options = ['New simulation','Load simulation','Delete simulation','Back'])
@@ -23,5 +24,7 @@ class SimulatorHomeMenu(Menu):
         """
 
         option = Menu.select_option(self.options)
-        if option == 4:
+        if option == 1:
+            controller.push(SimulatorNewMenu)
+        else:
             return controller.pop()

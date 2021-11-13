@@ -5,7 +5,9 @@ from asx_tracker.menu.simulator_home_menu import SimulatorHomeMenu
 
 class HomeMenu(Menu):
 
-    def __init__(self):
+    # Constructor
+
+    def __init__(self, **kwargs):
         super().__init__(
             title = "ASX tracker",
             subtitle = "Welcome to the ASX company and ETF tracker",

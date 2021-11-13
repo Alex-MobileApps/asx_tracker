@@ -1,12 +1,14 @@
 class Controller():
 
+    # Constructor
+
     def __init__(self):
         self.menus = []
 
 
     # Add/remove views
 
-    def push(self, menu):
+    def push(self, menu, **kwargs):
         """
         Pushes a new menu into view
 
@@ -16,7 +18,7 @@ class Controller():
             New menu
         """
 
-        self.menus.append(menu())
+        self.menus.append(menu(**kwargs))
         self.display()
 
 

@@ -1,6 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.plot import Plot
 from asx_tracker.date import Date
+from asx_tracker.date_input import DateInput
 from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
 
@@ -20,7 +21,7 @@ class VisualiseMenu(Menu):
 
     # Constructor
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__(title = 'Visualise')
         self.ticker = None
         self.start = VisualiseMenu._DEF_START
@@ -104,7 +105,7 @@ class VisualiseMenu(Menu):
         Sets the fetch start date as a timestamp
         """
 
-        start = VisualiseMenu._get_date('Enter start date: ')
+        start = DateInput.get_date('Enter start date: ')
         if start is None:
             return
         if start > self.end:
@@ -120,25 +121,13 @@ class VisualiseMenu(Menu):
         Sets the fetch end date as a timestamp
         """
 
-        end = VisualiseMenu._get_date('Enter end date: ')
+        end = DateInput.get_date('Enter end date: ')
         if end is None:
             return
         if end < self.start:
             Printer.ack('End date must not be less than the start date')
         else:
             self.end = end
-
-
-    @staticmethod
-    def _get_date(message):
-        txt = input(message)
-        date = Date.date_str_to_timestamp(txt)
-        if date is None:
-            Printer.ack(f'{txt} is not a valid date')
-        elif date < Date.MIN or date > Date.MAX:
-            Printer.ack(f'Date must be between {Date.timestamp_to_date_str(Date.MIN)} and {Date.timestamp_to_date_str(Date.MAX)}')
-        else:
-            return date
 
 
     # Plot type

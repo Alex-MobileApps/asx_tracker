@@ -5,7 +5,9 @@ from asx_tracker.utils import Utils
 
 class UpdateMenu(Menu):
 
-    def __init__(self):
+    # Constructor
+
+    def __init__(self, **kwargs):
         super().__init__(
             title = "Update data",
             options = ["Download new data", "Back"])
@@ -55,11 +57,11 @@ class UpdateMenu(Menu):
         # Download intraday
         print('Downloading intraday data ...')
         UpdateMenu.download_single(Scraper.download_intraday)
+        print()
 
         # Download daily
         print('Downloading daily data ...')
         UpdateMenu.download_single(Scraper.download_daily)
-        print()
 
         # Complete
         Printer.divider()

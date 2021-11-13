@@ -9,7 +9,7 @@ class HomeMenu(Menu):
         super().__init__(
             title = "ASX tracker",
             subtitle = "Welcome to the ASX company and ETF tracker",
-            options = ["Update data", "Visualise", "Trading simulation", "Exit"])
+            options = ["Update data", "Visualise", "Trading simulator", "Exit"])
 
 
     # Menu options

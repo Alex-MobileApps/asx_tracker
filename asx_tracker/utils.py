@@ -52,3 +52,53 @@ class Utils():
             try: int(m)
             except: return False
         return True
+
+
+    # Currency
+
+    @staticmethod
+    def int100_to_currency_str(val):
+        """
+        Converts an integer to a currency string
+        """
+
+        txt = str(val)
+        dollars = txt[:-2]
+        cents = txt[-2:]
+        if dollars == '':
+            dollars = '0'
+        else:
+            split_dollars = []
+            while len(dollars) >= 3:
+                split_dollars.append(dollars[-3:])
+                dollars = dollars[:-3]
+            if len(dollars) > 0:
+                split_dollars.append(dollars)
+            dollars = ','.join(reversed(split_dollars))
+        return '$' + dollars + '.' + cents
+
+
+    # String formatting
+
+    @staticmethod
+    def pad_str(txt, width):
+        """
+        Fills a string to a specified width
+
+        Parameters
+        ----------
+        txt : str
+            Text in the string
+        width : int
+            Width to fill to
+
+        Returns
+        -------
+        str
+            New string with set width
+        """
+
+        len_txt = len(txt)
+        if len_txt >= width:
+            return txt[:width]
+        return txt + (width - len_txt) * ' '

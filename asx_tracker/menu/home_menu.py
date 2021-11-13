@@ -1,6 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.menu.update_menu import UpdateMenu
 from asx_tracker.menu.visualise_menu import VisualiseMenu
+from asx_tracker.menu.simulator_home_menu import SimulatorHomeMenu
 
 class HomeMenu(Menu):
 
@@ -29,6 +30,6 @@ class HomeMenu(Menu):
         elif option == 2:
             controller.push(VisualiseMenu)
         elif option == 3:
-            pass
+            controller.push(SimulatorHomeMenu)
         else:
             exit()

@@ -157,7 +157,7 @@ class Date():
         if txt == Date._NOW:
             now = Date._TZ_SYDNEY_INFO.localize(datetime.now())
             now -= timedelta(seconds=now.second)
-            return now.timestamp()
+            return int(now.timestamp())
         elif txt == Date._MIN:
             return Date.MIN
         elif txt == Date._MAX:

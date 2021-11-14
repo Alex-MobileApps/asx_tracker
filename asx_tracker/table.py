@@ -1,5 +1,5 @@
 from shutil import get_terminal_size
-from asx_tracker.utils import Utils
+from asx_tracker.str_format import StrFormat
 
 class Table():
 
@@ -73,7 +73,7 @@ class Table():
         cell_width = Table._cell_width(cells)
 
         # Cells
-        return '|' + '|'.join([Utils.pad_str(c, cell_width) for c in cells]) + '|'
+        return '|' + '|'.join([StrFormat.pad_str(c, cell_width) for c in cells]) + '|'
 
 
     @staticmethod

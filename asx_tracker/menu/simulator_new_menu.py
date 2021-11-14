@@ -1,8 +1,8 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.date import Date
-from asx_tracker.date_input import DateInput
 from asx_tracker.printer import Printer
 from asx_tracker.utils import Utils
+from asx_tracker.str_format import StrFormat
 from asx_tracker.menu.simulator_run_menu import SimulatorRunMenu
 
 class SimulatorNewMenu(Menu):
@@ -37,14 +37,14 @@ class SimulatorNewMenu(Menu):
         Sets the main menu's options, including the current settings for each option
         """
 
-        c = lambda x: Utils.int100_to_currency_str(x)
+        c = lambda x: StrFormat.int100_to_currency_str(x)
         self.options = [
             f'Set start date:\t\t\t{Date.timestamp_to_date_str(self.start)}',
-            f'Set simulator step interval (min):\t{self.step_min} min',
+            f'Set simulator step interval:\t\t{self.step_min} min',
             f'Set starting balance:\t\t{c(self.balance)}',
             f'Set brokerage fee:\t\t\t{c(self.broke)}',
-            f'Set ASX data delay (min):\t\t{self.delay} min',
-            f'Set capital gains tax rate (%):\t{self.cgt}%',
+            f'Set ASX data delay:\t\t\t{self.delay} min',
+            f'Set Capital Gains Tax percentage:\t{self.cgt}%',
             'Begin',
             'Back'
         ]
@@ -89,9 +89,11 @@ class SimulatorNewMenu(Menu):
         Sets the simulator start date as a timestamp
         """
 
-        start = DateInput.get_date('Enter start date: ')
-        if start is not None:
-            self.start = start
+        txt = input('Enter start date: ')
+        val = StrFormat.date_str_to_timestamp(txt)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.start = val
 
 
     # Time advance interval
@@ -101,16 +103,11 @@ class SimulatorNewMenu(Menu):
         Sets the simulator time advance step interval
         """
 
-        txt = input('Enter step advance interval (min): ')
-        step = txt.upper()
-        step = step.replace('MIN', '')
-        step = step.replace(' ', '')
-        if not Utils.is_int(step):
-            return Printer.ack(f'{txt} is not a valid interger')
-        step = int(step)
-        if step <= 0:
-            return Printer.ack('Interval must be greater than 0 min')
-        self.step_min = int(step)
+        txt = input('Enter simulator step interval: ')
+        val = StrFormat.minute_str_to_int(txt, non_neg=True)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.step_min = val
 
 
     # Cash balance
@@ -120,7 +117,11 @@ class SimulatorNewMenu(Menu):
         Sets the simulator cash balance
         """
 
-        raise NotImplementedError()
+        txt = input('Enter starting balance: ')
+        val = StrFormat.currency_str_to_int100(txt, non_neg=True)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.balance = val
 
 
     # Brokerage
@@ -130,7 +131,11 @@ class SimulatorNewMenu(Menu):
         Sets the simulator brokerage fee
         """
 
-        raise NotImplementedError()
+        txt = input('Enter brokerage fee: ')
+        val = StrFormat.currency_str_to_int100(txt, non_neg=True)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.broke = val
 
 
     # Data delay
@@ -140,7 +145,11 @@ class SimulatorNewMenu(Menu):
         Sets the simulator ASX data retrieval delay
         """
 
-        raise NotImplementedError()
+        txt = input('Enter ASX data delay: ')
+        val = StrFormat.minute_str_to_int(txt, non_neg=True)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.delay = val
 
 
     # Capital gains
@@ -150,4 +159,8 @@ class SimulatorNewMenu(Menu):
         Sets the simulator capital gains tax bracket used when selling
         """
 
-        raise NotImplementedError()
+        txt = input('Enter Capital Gains Tax percentage: ')
+        val = StrFormat.percentage_str_to_int(txt, non_neg=True)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self.cgt = val

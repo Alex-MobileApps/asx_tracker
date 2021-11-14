@@ -1,7 +1,7 @@
 from asx_tracker.menu.menu import Menu
 from asx_tracker.plot import Plot
 from asx_tracker.date import Date
-from asx_tracker.date_input import DateInput
+from asx_tracker.str_format import StrFormat
 from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
 
@@ -91,11 +91,10 @@ class VisualiseMenu(Menu):
         Sets the selected ASX ticker
         """
 
-        ticker = input('Enter ticker: ').upper()
-        if Database.fetch_single_listing(ticker, Database.COL_TICKER):
-            self.ticker = ticker
-        else:
-            Printer.ack(f'{ticker} is not a valid ticker')
+        val = input('Enter ticker: ').upper().strip()
+        if not Database.fetch_single_listing(val, Database.COL_TICKER):
+            return Printer.ack(f'{val} is not valid')
+        self.ticker = val
 
 
     # Start date
@@ -105,13 +104,11 @@ class VisualiseMenu(Menu):
         Sets the fetch start date as a timestamp
         """
 
-        start = DateInput.get_date('Enter start date: ')
-        if start is None:
-            return
-        if start > self.end:
-            Printer.ack('Start date must not be greater than the end date')
-        else:
-            self.start = start
+        txt = input('Enter start date: ')
+        val = StrFormat.date_str_to_timestamp(txt)
+        if val is None or val > self.end:
+            return Printer.ack(f'{txt} is not valid')
+        self.start = val
 
 
     # End date
@@ -121,13 +118,11 @@ class VisualiseMenu(Menu):
         Sets the fetch end date as a timestamp
         """
 
-        end = DateInput.get_date('Enter end date: ')
-        if end is None:
-            return
-        if end < self.start:
-            Printer.ack('End date must not be less than the start date')
-        else:
-            self.end = end
+        txt = input('Enter end date: ')
+        val = StrFormat.date_str_to_timestamp(txt)
+        if val is None or val < self.start:
+            return Printer.ack(f'{txt} is not valid')
+        self.end = val
 
 
     # Plot type

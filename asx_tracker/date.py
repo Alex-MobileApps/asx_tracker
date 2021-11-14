@@ -13,7 +13,7 @@ class Date():
     DAY             = 86400
     WEEK            = 604800
     YEAR_365        = 31536000
-    MIN             = 0
+    MIN             = -36000
     MAX             = 253402261199
 
     _TZ_SYDNEY      = 'Australia/Sydney'
@@ -91,14 +91,9 @@ class Date():
 
 
     @staticmethod
-    def timestamp_to_datetime(timestamps):
+    def timestamp_to_datetime(*timestamps):
         """
         Converts timestamps to Sydney based datetime objects
-
-        Parameters
-        ----------
-        timestamps : int or list
-            Timestamp or list of timestamps
 
         Returns
         -------
@@ -107,9 +102,9 @@ class Date():
         """
 
         fn = lambda t: datetime.fromtimestamp(t, tz=timezone(Date._TZ_SYDNEY))
-        if Utils.has_len(timestamps):
+        if len(timestamps) > 1:
             return [fn(t) for t in timestamps]
-        return fn(timestamps)
+        return fn(timestamps[0])
 
 
     @staticmethod

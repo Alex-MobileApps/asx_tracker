@@ -70,3 +70,23 @@ class Utils():
             try: float(m)
             except: return False
         return True
+
+
+    @staticmethod
+    def confirm(message):
+        """
+        Asks a user to confirm an action
+
+        Parameters
+        ----------
+        message : str
+            Prompt message
+
+        Returns
+        -------
+        bool
+            True if confirmed, else False
+        """
+
+        y = input(f'{message} (y/n): ')
+        return y.strip().lower() == 'y'

@@ -1,4 +1,5 @@
 import sqlite3
+from asx_tracker.date import Date
 from asx_tracker.database.sql import Sql
 
 class Database():
@@ -230,6 +231,75 @@ class Database():
         return Database._fetch_single_intraday_or_daily(ticker, Database.TAB_DAILY, *cols, start=start, end=end)
 
 
+    # Live
+
+    @staticmethod
+    def fetch_multiple_live_prices(date, *tickers):
+        """
+        Fetches multiple live prices
+
+        Parameters
+        ----------
+        date : int
+            Live timestamp
+
+        Returns
+        -------
+        list
+            Live prices for each ticker
+        """
+
+        prices = [None] * len(tickers)
+        for i, ticker in enumerate(tickers):
+            prices[i] = Database.fetch_single_live_price(ticker, date)
+        return prices
+
+
+    @staticmethod
+    def fetch_single_live_price(ticker, date):
+        """
+        Fetches a live price for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker name
+        date : int
+            Live timestamp
+
+        Returns
+        -------
+        int or None
+            int if a live price is found, else None
+        """
+
+        last_intraday = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_INTRADAY, Database.COL_DATE, Database.COL_CLOSE)
+
+        # No intraday
+        if not last_intraday:
+            last_daily = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_DAILY, Database.COL_CLOSE)
+            return last_daily[0][0] if last_daily else None
+
+        min_date = Date.timestamp_to_datetime(Date.MIN)
+        days_since = lambda t: (Date.timestamp_to_datetime(t) - min_date).days
+
+        # Intraday on current day
+        intraday_date, intraday_close = last_intraday[0]
+        live_day, intraday_day = days_since(date), days_since(intraday_date)
+        if live_day == intraday_day:
+            return intraday_close
+
+        # No daily
+        last_daily = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_DAILY, Database.COL_DATE, Database.COL_CLOSE)
+        if not last_daily:
+            return intraday_close
+
+        # Return intraday if newer, else daily
+        daily_date, daily_close = last_daily[0]
+        daily_day = days_since(daily_date)
+        return intraday_close if intraday_day > daily_day else daily_close
+
+
     # Internal
 
     @staticmethod
@@ -300,6 +370,33 @@ class Database():
         if start is not None and end is not None:
             query[1] = f'AND {Database.COL_DATE} BETWEEN {start} AND {end}'
         query = ' '.join(query)
+        return Database._execute(query)
+
+
+    @staticmethod
+    def _fetch_live_intraday_or_daily(ticker, table, date, *cols):
+        """
+        Retrieve the most recent intraday or daily entry for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker to fetch
+        table : str
+            Database.COL_INTRADAY : intraday data
+            Database.COL_DAILY : daily data
+        date : int
+            Timestamp of the live date
+        """
+
+        sel_cols = Database._set_cols(cols)
+
+        query = f"""
+        SELECT {sel_cols} FROM {table}
+        WHERE {Database.COL_TICKER} = '{ticker}' AND {Database.COL_DATE} <= {date}
+        ORDER BY {Database.COL_DATE} DESC LIMIT 1
+        """
+
         return Database._execute(query)
 
 

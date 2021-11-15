@@ -35,6 +35,8 @@ class HoldingList():
             Number of units
         """
 
+        if units < 0:
+            return
         if ticker in self._holdings:
             self._holdings[ticker] += units
         else:

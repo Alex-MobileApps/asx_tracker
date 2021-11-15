@@ -51,6 +51,8 @@ class OrderList():
             Limit order price, by default None
         """
 
+        if units < 0 or (price is not None and price < 0):
+            return
         self._orders.append((ticker, order_type, units, price))
         self._resort()
 

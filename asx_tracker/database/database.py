@@ -273,11 +273,11 @@ class Database():
             int if a live price is found, else None
         """
 
-        last_intraday = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_INTRADAY, Database.COL_DATE, Database.COL_CLOSE)
+        last_intraday = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_INTRADAY, date, Database.COL_DATE, Database.COL_CLOSE)
 
         # No intraday
         if not last_intraday:
-            last_daily = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_DAILY, Database.COL_CLOSE)
+            last_daily = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_DAILY, date, Database.COL_CLOSE)
             return last_daily[0][0] if last_daily else None
 
         min_date = Date.timestamp_to_datetime(Date.MIN)
@@ -290,7 +290,7 @@ class Database():
             return intraday_close
 
         # No daily
-        last_daily = Database._fetch_live_intraday_or_daily(ticker, date, Database.TAB_DAILY, Database.COL_DATE, Database.COL_CLOSE)
+        last_daily = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_DAILY, date, Database.COL_DATE, Database.COL_CLOSE)
         if not last_daily:
             return intraday_close
 

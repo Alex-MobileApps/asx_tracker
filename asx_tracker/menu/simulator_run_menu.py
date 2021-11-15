@@ -270,6 +270,4 @@ class SimulatorRunMenu(Menu):
         print()
         message = f'Confirm {order_type} {ticker} x {units} @ {StrFormat.int100_to_currency_str(val)} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
-            print(order_type)
-            input()
             self.orders.add(ticker, order_type, units, val)

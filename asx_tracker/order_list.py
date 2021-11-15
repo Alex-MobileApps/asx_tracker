@@ -9,6 +9,7 @@ class OrderList():
     TYPE_MARKET_SELL    = 'Market SELL'
     TYPE_LIMIT_BUY      = 'Limit BUY'
     TYPE_LIMIT_SELL     = 'Limit SELL'
+    ORDER_TYPES = [TYPE_MARKET_BUY, TYPE_MARKET_SELL, TYPE_LIMIT_BUY, TYPE_LIMIT_SELL]
 
 
     # Constructor

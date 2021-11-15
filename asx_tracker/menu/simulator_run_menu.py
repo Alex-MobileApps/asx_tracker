@@ -10,11 +10,6 @@ from asx_tracker.order_list import OrderList
 
 class SimulatorRunMenu(Menu):
 
-    # Static variables
-
-    _ORDER_TYPES = ['Market BUY','Market SELL','Limit BUY','Limit SELL','Back']
-
-
     # Constructor
 
     def __init__(self, **kwargs):
@@ -108,8 +103,9 @@ class SimulatorRunMenu(Menu):
         """
 
         # Order type
-        Printer.options(SimulatorRunMenu._ORDER_TYPES)
-        order_type = Menu.select_option(SimulatorRunMenu._ORDER_TYPES)
+        order_types = OrderList.ORDER_TYPES + ['Back']
+        Printer.options(order_types)
+        order_type = Menu.select_option(order_types)
         if order_type == 5:
             return
 

@@ -1,24 +1,21 @@
-from asx_tracker.database.database import Database
-from asx_tracker.str_format import StrFormat
-
 class HoldingList():
 
     # Constructor
 
     def __init__(self):
-        self._holdings = {}
+        self.items = {}
 
 
     # Length
 
     def __len__(self):
-        return len(self._holdings)
+        return len(self.items)
 
 
     # Index
 
     def __getitem__(self, ticker):
-        return self._holdings[ticker]
+        return self.items[ticker]
 
 
     # Functions
@@ -37,10 +34,10 @@ class HoldingList():
 
         if units < 0:
             return
-        if ticker in self._holdings:
-            self._holdings[ticker] += units
+        if ticker in self.items:
+            self.items[ticker] += units
         else:
-            self._holdings[ticker] = units
+            self.items[ticker] = units
 
 
     def remove(self, ticker, units):
@@ -55,13 +52,13 @@ class HoldingList():
             Number of units
         """
 
-        if units < 0 or ticker not in self._holdings:
+        if units < 0 or ticker not in self.items:
             return
-        old_units = self._holdings[ticker]
+        old_units = self.items[ticker]
         if old_units == units:
-            del self._holdings[ticker]
+            del self.items[ticker]
         elif old_units > units:
-            self._holdings[ticker] -= units
+            self.items[ticker] -= units
 
 
     def tickers(self):
@@ -74,4 +71,4 @@ class HoldingList():
             List of tickers
         """
 
-        return sorted(self._holdings.keys())
+        return sorted(self.items.keys())

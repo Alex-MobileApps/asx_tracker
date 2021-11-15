@@ -7,6 +7,7 @@ from asx_tracker.date import Date
 from asx_tracker.utils import Utils
 from asx_tracker.holding_list import HoldingList
 from asx_tracker.order_list import OrderList
+from asx_tracker.order import Order
 
 class SimulatorRunMenu(Menu):
 
@@ -103,7 +104,7 @@ class SimulatorRunMenu(Menu):
         """
 
         # Order type
-        order_types = OrderList.ORDER_TYPES + ['Back']
+        order_types = Order.ORDER_TYPES + ['Back']
         Printer.options(order_types)
         order_type = Menu.select_option(order_types)
         if order_type == 5:
@@ -118,7 +119,7 @@ class SimulatorRunMenu(Menu):
         # Units
         print()
         units = input('Number of units: ')
-        if not Utils.is_int(units):
+        if not Utils.is_int(units) or int(units) < 0:
             return Printer.ack(f'{units} is not a valid number of units')
         units = int(units)
 
@@ -141,8 +142,7 @@ class SimulatorRunMenu(Menu):
         Cancels an active order
         """
 
-        OrderList.TYPE_MARKET_BUY
-        options = [f"Cancel {a[1]} {a[0]} x {a[2]} @ {OrderList.MARKET_PRICE if a[3] is None else StrFormat.int100_to_currency_str(a[3])}" for a in self.orders] + ['Back']
+        options = [f"Cancel {order.order_type} {order.ticker} x {order.units} @ {Order.MARKET_PRICE if order.price is None else StrFormat.int100_to_currency_str(order.price)}" for order in self.orders] + ['Back']
         Printer.options(options)
         option = Menu.select_option(options)
         if option == len(options):
@@ -175,9 +175,22 @@ class SimulatorRunMenu(Menu):
         Advances the simulator date
         """
 
-        nxt = min(self.now + self.step_min * Date.MINUTE, Date.MAX)
-        # NOTE: Handle orders here between now and nxt
-        self.now = nxt
+        nxt = self.now + self.step_min * Date.MINUTE
+        if nxt > Date.MAX:
+            nxt = Date.MAX
+        # NOTE: make -> if nxt >= 4:00PM or <10:00AM, set nxt to 9.30AM next day
+
+        # No orders pending
+        if len(self.orders) == 0:
+            self.now = nxt
+            return
+
+        tickers = self.orders.tickers()
+        while self.now < nxt:
+            prices = Database.fetch_multiple_live_prices(self.now, *tickers)
+            prices = dict(zip(tickers, prices))
+            self._fill_all_orders(prices)
+            self.now += Date.MINUTE
 
 
     # Save
@@ -200,7 +213,7 @@ class SimulatorRunMenu(Menu):
             Number of units
         """
 
-        self._market_order(ticker, units, OrderList.TYPE_MARKET_BUY)
+        self._market_order(ticker, units, Order.TYPE_MARKET_BUY)
 
 
     def _market_sell(self, ticker, units):
@@ -209,7 +222,7 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._market_buy
         """
 
-        self._market_order(ticker, units, OrderList.TYPE_MARKET_SELL)
+        self._market_order(ticker, units, Order.TYPE_MARKET_SELL)
 
 
     def _limit_buy(self, ticker, units):
@@ -218,7 +231,7 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._market_buy
         """
 
-        self._limit_order(ticker, units, OrderList.TYPE_LIMIT_BUY)
+        self._limit_order(ticker, units, Order.TYPE_LIMIT_BUY)
 
 
     def _limit_sell(self, ticker, units):
@@ -227,7 +240,7 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._market_buy
         """
 
-        self._limit_order(ticker, units, OrderList.TYPE_LIMIT_SELL)
+        self._limit_order(ticker, units, Order.TYPE_LIMIT_SELL)
 
 
     def _market_order(self, ticker, units, order_type):
@@ -241,13 +254,14 @@ class SimulatorRunMenu(Menu):
         units : int
             Number of units
         order_type : str
-            OrderList.TYPE_MARKET_BUY : Market buy order
-            OrderList.TYPE_MARKET_SELL : Market sell order
+            Order.TYPE_MARKET_BUY : Market buy order
+            Order.TYPE_MARKET_SELL : Market sell order
         """
 
-        message = f'Confirm {order_type} {ticker} x {units} @ {OrderList.MARKET_PRICE} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
+        message = f'Confirm {order_type} {ticker} x {units} @ {Order.MARKET_PRICE} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
-            self.orders.add(ticker, order_type, units)
+            order = Order(ticker, order_type, units)
+            self.orders.add(order)
 
 
     def _limit_order(self, ticker, units, order_type):
@@ -261,8 +275,8 @@ class SimulatorRunMenu(Menu):
         units : int
             Number of units
         order_type : str
-            OrderList.TYPE_LIMIT_BUY : Limit buy order
-            OrderList.TYPE_LIMIT_SELL : Limit sell order
+            Order.TYPE_LIMIT_BUY : Limit buy order
+            Order.TYPE_LIMIT_SELL : Limit sell order
         """
 
         txt = input('Enter limit price: ')
@@ -270,4 +284,123 @@ class SimulatorRunMenu(Menu):
         print()
         message = f'Confirm {order_type} {ticker} x {units} @ {StrFormat.int100_to_currency_str(val)} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
-            self.orders.add(ticker, order_type, units, val)
+            order = Order(ticker, order_type, units, val)
+            self.orders.add(order)
+
+
+    def _fill_all_orders(self, prices):
+        """
+        Attempt to fill all orders in the order list
+
+        Parameters
+        ----------
+        prices : dict
+            Live price for each ticker in the order list
+        """
+
+        filled = []
+        for i, order in enumerate(self.orders):
+            price = prices[order.ticker]
+            if price is None:
+                continue # No previous entry
+            if self._fill_single_order(order, price):
+                filled.append(i)
+        for i in reversed(filled):
+            self.orders.remove(i)
+
+
+    def _fill_single_order(self, order, price):
+        """
+        Attempt to fill a single order
+
+        Parameters
+        ----------
+        order : Order
+            Order to fill
+        price : int
+            Live price for the ticker in the order
+
+        Returns
+        -------
+        bool
+            Whether or not the order was filled successfully
+        """
+
+        if order.order_type == Order.TYPE_MARKET_BUY:
+            return self._fill_market_buy(order, price)
+        elif order.order_type == Order.TYPE_MARKET_SELL:
+            return self._fill_market_sell(order, price)
+        elif order.order_type == Order.TYPE_LIMIT_BUY:
+            return self._fill_limit_buy(order, price)
+        else:
+            return self._fill_limit_sell(order, price)
+
+
+    def _fill_market_buy(self, order, price):
+        """
+        Attempt to fill a market buy order.
+        See SimulatorRunMenu._fill_single_order
+        """
+
+        total_price = order.units * price + self.broke
+        if total_price <= self.balance:
+            self.balance -= total_price
+            self.holdings.add(order.ticker, order.units)
+        return True
+
+
+    def _fill_market_sell(self, order, price):
+        """
+        Attempt to fill a market sell order.
+        See SimulatorRunMenu._fill_single_order
+        """
+
+        total_price = order.units * price - self.broke
+        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker]:
+            self.balance += total_price
+            self.holdings.remove(order.ticker, order.units)
+        return True
+
+
+    def _fill_limit_buy(self, order, price):
+        """
+        Attempt to fill a limit buy order.
+        See SimulatorRunMenu._fill_single_order
+        """
+
+        # Not at limit
+        if price > order.price:
+            return False
+
+        total_price = order.units * price + self.broke
+
+        # Success
+        if total_price <= self.balance:
+            self.balance -= total_price
+            self.holdings.add(order.ticker, order.units)
+            return True
+
+        # Insufficient funds
+        return False
+
+
+    def _fill_limit_sell(self, order, price):
+        """
+        Attempt to fill a limit sell order.
+        See SimulatorRunMenu._fill_single_order
+        """
+
+        # Not at limit
+        if price < order.price:
+            return False
+
+        total_price = order.units * price - self.broke
+
+        # Success
+        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker]:
+            self.balance += total_price
+            self.holdings.remove(order.ticker, order.units)
+            return True
+
+        # Not owned
+        return False

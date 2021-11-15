@@ -1,5 +1,5 @@
 from shutil import get_terminal_size
-from asx_tracker.order_list import OrderList
+from asx_tracker.order import Order
 from asx_tracker.str_format import StrFormat
 from asx_tracker.database.database import Database
 
@@ -213,8 +213,7 @@ class Table():
 
         len_orders = len(order_list)
         rows = [None] * len_orders
-        for i in range(len_orders):
-            val = order_list[i]
-            lim = OrderList.MARKET_PRICE if val[3] is None else StrFormat.int100_to_currency_str(val[3])
-            rows[i] = (val[0], val[1], str(val[2]), lim)
+        for i, order in enumerate(order_list):
+            lim = Order.MARKET_PRICE if order.price is None else StrFormat.int100_to_currency_str(order.price)
+            rows[i] = (order.ticker, order.order_type, str(order.units), lim)
         return rows

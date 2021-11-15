@@ -1,5 +1,4 @@
-from asx_tracker.database.database import Database
-from asx_tracker.str_format import StrFormat
+from asx_tracker.order import Order
 
 class OrderList():
 
@@ -11,51 +10,39 @@ class OrderList():
     TYPE_LIMIT_SELL     = 'Limit SELL'
     MARKET_PRICE        = 'MARKET'
     ORDER_TYPES         = [TYPE_MARKET_BUY, TYPE_MARKET_SELL, TYPE_LIMIT_BUY, TYPE_LIMIT_SELL]
-    
 
 
     # Constructor
 
     def __init__(self):
-        self._orders = []
+        self.items = []
 
 
     # Length
 
     def __len__(self):
-        return len(self._orders)
+        return len(self.items)
 
 
     # Index
 
     def __getitem__(self, idx):
-        return self._orders[idx]
+        return self.items[idx]
 
 
     # Functions
 
-    def add(self, ticker, order_type, units, price=None):
+    def add(self, order):
         """
         Add an order to the order list
 
         Parameters
         ----------
-        ticker : str
-            Ticker name
-        order_type : int
-            OrderList.TYPE_MARKET_BUY : Market BUY order
-            OrderList.TYPE_MARKET_SELL : Market SELL order
-            OrderList.TYPE_LIMIT_BUY : Limit BUY order
-            OrderList.TYPE_LIMIT_SELL : Limit SELL order
-        units : int
-            Number of units
-        price : int, optional
-            Limit order price, by default None
+        order : Order
+            Order to add
         """
 
-        if units < 0 or (price is not None and price < 0):
-            return
-        self._orders.append((ticker, order_type, units, price))
+        self.items.append(order)
         self._resort()
 
 
@@ -69,9 +56,22 @@ class OrderList():
             Order index in the order list
         """
 
-        if idx < 0 or idx >= len(self._orders):
+        if idx < 0 or idx >= len(self.items):
             return
-        self._orders.pop(idx)
+        self.items.pop(idx)
+
+
+    def tickers(self):
+        """
+        Returns a sorted list of tickers in the order list
+
+        Returns
+        -------
+        list
+            List of tickers
+        """
+
+        return sorted(set([order.ticker for order in self.items]))
 
 
     # Internal
@@ -82,12 +82,11 @@ class OrderList():
         """
 
         orders = {}
-        order_pref = [OrderList.TYPE_MARKET_SELL, OrderList.TYPE_LIMIT_SELL, OrderList.TYPE_MARKET_BUY, OrderList.TYPE_LIMIT_BUY]
+        order_pref = [Order.TYPE_MARKET_SELL, Order.TYPE_LIMIT_SELL, Order.TYPE_MARKET_BUY, Order.TYPE_LIMIT_BUY]
         for k in order_pref:
             orders[k] = []
-        for order in self._orders:
-            k = order[1]
-            orders[k].append(order)
-        self._orders = []
+        for order in self.items:
+            orders[order.order_type].append(order)
+        self.items = []
         for k in order_pref:
-            self._orders += orders[k]
+            self.items += orders[k]

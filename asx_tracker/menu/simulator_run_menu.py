@@ -5,13 +5,13 @@ from asx_tracker.str_format import StrFormat
 from asx_tracker.table import Table
 from asx_tracker.date import Date
 from asx_tracker.utils import Utils
+from asx_tracker.holding_list import HoldingList
+from asx_tracker.order_list import OrderList
 
 class SimulatorRunMenu(Menu):
 
     # Static variables
 
-    _HEADER_HOLDINGS = ['Ticker','Units','Unit price']
-    _HEADER_LIMITS = ['Ticker','Type','Units','Limit price','Current price','Status']
     _ORDER_TYPES = ['Market BUY','Market SELL','Limit BUY','Limit SELL','Back']
 
 
@@ -20,7 +20,7 @@ class SimulatorRunMenu(Menu):
     def __init__(self, **kwargs):
         super().__init__(options=[
             'Buy or Sell',
-            'Cancel limit order',
+            'Cancel order',
             'Visualise',
             'Advance',
             'Save',
@@ -34,15 +34,9 @@ class SimulatorRunMenu(Menu):
         self.delay = kwargs['delay']
         self.step_min = kwargs['step_min']
         self.cgt = kwargs['cgt']
-        self.holdings = []
-        self.limits = []
 
-        # Limits demo
-        self.limits = [
-            ('DHHF', 'BUY', 150, 2950),
-            ('VDHG', 'SELL', 30, 6300)
-        ]
-
+        self.holdings = HoldingList()
+        self.orders = OrderList()
         self.set_title()
         self.set_subtitle()
 
@@ -64,16 +58,15 @@ class SimulatorRunMenu(Menu):
         Sets the main menu's subtitle
         """
 
-        holdings_table = Table.table(header=SimulatorRunMenu._HEADER_HOLDINGS, rows=self._holdings_to_rows())
-        limits_table = Table.table(header=SimulatorRunMenu._HEADER_LIMITS, rows=self._limits_to_rows())
+        delay_date = self.now - self.delay * Date.MINUTE
         total_cash = f'Cash:\t\t{StrFormat.int100_to_currency_str(self.balance)}'
         total_asx = f'ASX holdings:\t{"$17,005.31"}'
         total = f'Total:\t\t{"$27,005.31"}'
         self.subtitle = total_cash + '\n' + total_asx + '\n' + total
         if self.holdings:
-            self.subtitle += '\n\nASX holdings:\n' + holdings_table
-        if self.limits:
-            self.subtitle += '\n\nActive limit orders:\n' + limits_table
+            self.subtitle += '\n\nASX holdings:\n' + Table.holdings(self.holdings, delay_date)
+        if self.orders:
+            self.subtitle += '\n\nPending orders:\n' + Table.orders(self.orders)
 
 
     # Menu options
@@ -95,7 +88,7 @@ class SimulatorRunMenu(Menu):
         if option == 1:
             self.buy_sell()
         elif option == 2:
-            self.cancel_limit_order()
+            self.cancel_order()
         elif option == 3:
             self.visualise()
         elif option == 4:
@@ -134,6 +127,7 @@ class SimulatorRunMenu(Menu):
         units = int(units)
 
         # Handle order
+        print()
         if order_type == 1:
             self._market_buy(ticker, units)
         elif order_type == 2:
@@ -144,19 +138,20 @@ class SimulatorRunMenu(Menu):
             self._limit_sell(ticker, units)
 
 
-    # Cancel limit order
+    # Cancel order
 
-    def cancel_limit_order(self):
+    def cancel_order(self):
         """
-        Cancels an active limit order
+        Cancels an active order
         """
 
-        options = [f'Cancel {l[1]} {l[0]} x {l[2]} @ {StrFormat.int100_to_currency_str(l[3])}' for l in self.limits] + ['Back']
+        OrderList.TYPE_MARKET_BUY
+        options = [f"Cancel {a[1]} {a[0]} x {a[2]} @ {'MARKET' if a[3] is None else StrFormat.int100_to_currency_str(a[3])}" for a in self.orders] + ['Back']
         Printer.options(options)
         option = Menu.select_option(options)
         if option == len(options):
             return
-        self.limits.pop(option-1)
+        self.orders.remove(option-1)
 
 
     # Visualise
@@ -185,7 +180,7 @@ class SimulatorRunMenu(Menu):
         """
 
         nxt = min(self.now + self.step_min * Date.MINUTE, Date.MAX)
-        # NOTE: Handle limit orders here between now and nxt
+        # NOTE: Handle orders here between now and nxt
         self.now = nxt
 
 
@@ -209,22 +204,9 @@ class SimulatorRunMenu(Menu):
             Number of units to purchase
         """
 
-        # Get price
-        unit_price = Database.fetch_single_live_price(ticker, self.now)
-        if unit_price is None:
-            return Printer.ack('No recent unit price')
-        price = unit_price * units + self.broke
-
-        # Insufficient funds
-        if price > self.balance:
-            return Printer.ack('Insufficient funds')
-
-        # Buy
-        print()
-        message = f'Confirm Market BUY {ticker} x {units} @ {StrFormat.int100_to_currency_str(unit_price)} + {StrFormat.int100_to_currency_str(self.broke)} brokerage = {StrFormat.int100_to_currency_str(price)}'
+        message = f'Confirm Market BUY {ticker} x {units} @ Market + {StrFormat.int100_to_currency_str(self.broke)} brokerage'
         if Utils.confirm(message):
-            self.balance -= price
-            self.holdings.append((ticker,units))
+            self.orders.add(ticker, OrderList.TYPE_MARKET_BUY, units)
 
 
     def _market_sell(self, ticker, units):
@@ -237,38 +219,3 @@ class SimulatorRunMenu(Menu):
 
     def _limit_sell(self, ticker, units):
         raise NotImplementedError
-
-
-    def _holdings_to_rows(self):
-        """
-        Converts the current holdings to a format that can input into a table
-
-        Returns
-        -------
-        list
-            List of tuples with cells for each row in the table
-        """
-
-        return [(r[0], str(r[1]), '$39.24') for r in self.holdings]
-
-
-    def _limits_to_rows(self):
-        """
-        Converts the current limit orders to a format that can input into a table
-
-        Returns
-        -------
-        list
-            List of tuples with cells for each row in the table
-        """
-
-        limits = [None] * len(self.limits)
-        for i, l in enumerate(self.limits):
-            l1 = l[0]
-            l2 = l[1]
-            l3 = str(l[2])
-            l4 = StrFormat.int100_to_currency_str(l[3])
-            l5 = '$99.99'
-            l6 = 'PENDING'
-            limits[i] = (l1,l2,l3,l4,l5,l6)
-        return limits

@@ -1,4 +1,5 @@
 from shutil import get_terminal_size
+from asx_tracker.order_list import OrderList
 from asx_tracker.str_format import StrFormat
 from asx_tracker.database.database import Database
 
@@ -214,6 +215,6 @@ class Table():
         rows = [None] * len_orders
         for i in range(len_orders):
             val = order_list[i]
-            lim = 'N/A' if val[3] is None else StrFormat.int100_to_currency_str(val[3])
+            lim = OrderList.MARKET_PRICE if val[3] is None else StrFormat.int100_to_currency_str(val[3])
             rows[i] = (val[0], val[1], str(val[2]), lim)
         return rows

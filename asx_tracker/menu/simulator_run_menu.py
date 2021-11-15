@@ -142,7 +142,7 @@ class SimulatorRunMenu(Menu):
         """
 
         OrderList.TYPE_MARKET_BUY
-        options = [f"Cancel {a[1]} {a[0]} x {a[2]} @ {'MARKET' if a[3] is None else StrFormat.int100_to_currency_str(a[3])}" for a in self.orders] + ['Back']
+        options = [f"Cancel {a[1]} {a[0]} x {a[2]} @ {OrderList.MARKET_PRICE if a[3] is None else StrFormat.int100_to_currency_str(a[3])}" for a in self.orders] + ['Back']
         Printer.options(options)
         option = Menu.select_option(options)
         if option == len(options):
@@ -190,28 +190,86 @@ class SimulatorRunMenu(Menu):
 
     def _market_buy(self, ticker, units):
         """
-        Handles market buy orders
+        Adds a market buy order to the order list
 
         Parameters
         ----------
         ticker : str
             Ticker name
         units : int
-            Number of units to purchase
+            Number of units
         """
 
-        message = f'Confirm Market BUY {ticker} x {units} @ Market + {StrFormat.int100_to_currency_str(self.broke)} brokerage'
-        if Utils.confirm(message):
-            self.orders.add(ticker, OrderList.TYPE_MARKET_BUY, units)
+        self._market_order(ticker, units, OrderList.TYPE_MARKET_BUY)
 
 
     def _market_sell(self, ticker, units):
-        raise NotImplementedError()
+        """
+        Adds a market sell order to the order list.
+        See SimulatorRunMenu._market_buy
+        """
+
+        self._market_order(ticker, units, OrderList.TYPE_MARKET_SELL)
 
 
     def _limit_buy(self, ticker, units):
-        raise NotImplementedError()
+        """
+        Adds a limit buy order to the order list.
+        See SimulatorRunMenu._market_buy
+        """
+
+        self._limit_order(ticker, units, OrderList.TYPE_LIMIT_BUY)
 
 
     def _limit_sell(self, ticker, units):
-        raise NotImplementedError
+        """
+        Adds a limit sell order to the order list.
+        See SimulatorRunMenu._market_buy
+        """
+
+        self._limit_order(ticker, units, OrderList.TYPE_LIMIT_SELL)
+
+
+    def _market_order(self, ticker, units, order_type):
+        """
+        Adds a market order to the order list
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker name
+        units : int
+            Number of units
+        order_type : str
+            OrderList.TYPE_MARKET_BUY : Market buy order
+            OrderList.TYPE_MARKET_SELL : Market sell order
+        """
+
+        message = f'Confirm {order_type} {ticker} x {units} @ {OrderList.MARKET_PRICE} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
+        if Utils.confirm(message):
+            self.orders.add(ticker, order_type, units)
+
+
+    def _limit_order(self, ticker, units, order_type):
+        """
+        Adds a limit order to the order list
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker name
+        units : int
+            Number of units
+        order_type : str
+            OrderList.TYPE_LIMIT_BUY : Limit buy order
+            OrderList.TYPE_LIMIT_SELL : Limit sell order
+        """
+
+        txt = input('Enter limit price: ')
+        val = StrFormat.currency_str_to_int100(txt, non_neg=True)
+        print()
+        message = f'Confirm {order_type} {ticker} x {units} @ {StrFormat.int100_to_currency_str(val)} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
+        if Utils.confirm(message):
+            print(order_type)
+            input()
+            self.orders.add(ticker, order_type, units, val)

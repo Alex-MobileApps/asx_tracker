@@ -1,5 +1,5 @@
 from asx_tracker.menu.menu import Menu
-from asx_tracker.scraper.scraper import Scraper
+from asx_tracker.scraper import Scraper
 from asx_tracker.printer import Printer
 from asx_tracker.utils import Utils
 

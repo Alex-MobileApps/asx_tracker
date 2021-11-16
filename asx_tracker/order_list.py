@@ -2,16 +2,6 @@ from asx_tracker.order import Order
 
 class OrderList():
 
-    # Static variables
-
-    TYPE_MARKET_BUY     = 'Market BUY'
-    TYPE_MARKET_SELL    = 'Market SELL'
-    TYPE_LIMIT_BUY      = 'Limit BUY'
-    TYPE_LIMIT_SELL     = 'Limit SELL'
-    MARKET_PRICE        = 'MARKET'
-    ORDER_TYPES         = [TYPE_MARKET_BUY, TYPE_MARKET_SELL, TYPE_LIMIT_BUY, TYPE_LIMIT_SELL]
-
-
     # Constructor
 
     def __init__(self):

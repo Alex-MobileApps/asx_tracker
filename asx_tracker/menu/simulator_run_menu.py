@@ -19,7 +19,6 @@ class SimulatorRunMenu(Menu):
             'Cancel order',
             'Visualise',
             'Advance',
-            'Save',
             'End'
         ])
 
@@ -78,7 +77,7 @@ class SimulatorRunMenu(Menu):
         """
 
         option = Menu.select_option(self.options)
-        if option == 6:
+        if option == 5:
             return controller.pop()
         print()
         if option == 1:
@@ -89,8 +88,6 @@ class SimulatorRunMenu(Menu):
             self.visualise()
         elif option == 4:
             self.advance()
-        else:
-            self.save()
         self.set_title()
         self.set_subtitle()
         controller.display()
@@ -191,12 +188,6 @@ class SimulatorRunMenu(Menu):
             prices = dict(zip(tickers, prices))
             self._fill_all_orders(prices)
             self.now += Date.MINUTE
-
-
-    # Save
-
-    def save(self):
-        raise NotImplementedError()
 
 
     # Internal

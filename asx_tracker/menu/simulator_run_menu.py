@@ -224,16 +224,27 @@ class SimulatorRunMenu(Menu):
             Timestamp of date to advance to
         """
 
+        # End date
         nxt = min(Date.MAX, date)
+        if not Date.market_open(nxt):
+            nxt = Date.timestamp_next_open(nxt)
 
-        # Fill orders
-        while self.now < nxt and len(self.orders) > 0:
-            tickers = self.orders.tickers()
-            prices = Database.fetch_multiple_live_prices(self.now, *tickers)
-            self._fill_all_orders(prices)
-            self.now += Date.MINUTE
+        while self.now < nxt:
 
-        self.now = nxt
+            # Market closed
+            if not Date.market_open(self.now):
+                self.now = Date.timestamp_next_open(self.now)
+
+            # No orders
+            elif len(self.orders) == 0:
+                self.now = nxt
+
+            # Fill orders
+            else:
+                tickers = self.orders.tickers()
+                prices = Database.fetch_multiple_live_prices(self.now, *tickers)
+                self._fill_all_orders(prices)
+                self.now += Date.MINUTE
 
 
     def _market_buy(self, ticker, units):

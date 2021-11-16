@@ -14,11 +14,13 @@ class Date():
     WEEK            = 604800
     YEAR_365        = 31536000
     MIN             = -36000
-    MAX             = 253402261199
+    MAX             = 253402232400
+    HOUR_OPEN       = 10
+    HOUR_CLOSE      = 16
+    MAX_OPEN        = 253402210800
 
     _TZ_SYDNEY      = 'Australia/Sydney'
     _TZ_SYDNEY_INFO = timezone(_TZ_SYDNEY)
-    _HOUR_CLOSE     = 19
     _DATE_FORMAT    = '%d %b %Y %I:%M%p'
     _MONTH_MAP      = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
     _NOW            = 'NOW'
@@ -88,6 +90,63 @@ class Date():
 
         if date is None: date = Date.timestamp_now()
         return offset + date - 730 * Date.DAY
+
+
+    @staticmethod
+    def market_open(date):
+        """
+        Returns whether or not the market is open at a given date
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of the date
+
+        Returns
+        -------
+        bool
+            Whether or not the market is open
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        if d.weekday() >= 5:
+            return False
+        if d.hour < Date.HOUR_OPEN:
+            return False
+        if d.hour > Date.HOUR_CLOSE:
+            return False
+        if d.hour == Date.HOUR_CLOSE:
+            return d.minute == 0
+        return True
+
+
+    @staticmethod
+    def timestamp_next_open(date):
+        """
+        Returns to next next market open as a timestamp
+
+        Parameters
+        ----------
+        date : int
+            Current date
+
+        Returns
+        -------
+        int
+            Timestamp of the next market open
+        """
+
+        if date > Date.MAX_OPEN:
+            return Date.MAX_OPEN
+
+        d = Date.timestamp_to_datetime(date)
+        if d.hour >= Date.HOUR_OPEN:
+            d += timedelta(days=1)
+        d = d.replace(hour=Date.HOUR_OPEN)
+        weekday = d.weekday()
+        days = 0 if weekday < 5 else 7 - weekday
+        d = d.replace(hour=Date.HOUR_OPEN) + timedelta(days=days)
+        return int(d.timestamp())
 
 
     @staticmethod

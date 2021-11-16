@@ -10,6 +10,7 @@ from asx_tracker.holding_list import HoldingList
 from asx_tracker.order_list import OrderList
 from asx_tracker.transaction_list import TransactionList
 from asx_tracker.order import Order
+from asx_tracker.plot import Plot
 
 class SimulatorRunMenu(Menu):
 
@@ -176,14 +177,10 @@ class SimulatorRunMenu(Menu):
         ticker = input('Enter Ticker: ').strip().upper()
         if not Database.fetch_single_listing(ticker, Database.COL_TICKER):
             return Printer.ack(f'{ticker} is not valid')
-
         print()
-        options = ['1 Day', '5 Days', '1 Month', '6 Months', '1 Year', '5 Years', 'Max']
-        Printer.options(options)
-        option = Menu.select_option(options)
-
-
-        raise NotImplementedError()
+        end = self.now - self.delay * Date.MINUTE
+        start = end - Date.DAY
+        Plot.intraday(ticker, start, end)
 
 
     # Advance
@@ -324,6 +321,7 @@ class SimulatorRunMenu(Menu):
         message = f'Confirm {order} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
             self.orders.add(order)
+
 
     def _advance_and_fill(self, date):
         """

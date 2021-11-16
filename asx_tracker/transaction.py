@@ -71,7 +71,7 @@ class Transaction():
             Negative unit price
         """
 
-        if unit_price < 0:
+        if unit_price is not None and unit_price < 0:
             raise ValueError('Negative unit price')
         self.unit_price = unit_price
 

@@ -19,6 +19,8 @@ class SimulatorRunMenu(Menu):
             'Cancel order',
             'Visualise',
             'Advance',
+            'Advance to date',
+            'Pay Tax',
             'End'
         ])
 
@@ -29,6 +31,7 @@ class SimulatorRunMenu(Menu):
         self.delay = kwargs['delay']
         self.step_min = kwargs['step_min']
         self.cgt = kwargs['cgt']
+        self.tax = 0
 
         self.holdings = HoldingList()
         self.orders = OrderList()
@@ -54,10 +57,12 @@ class SimulatorRunMenu(Menu):
         """
 
         delay_date = self.now - self.delay * Date.MINUTE
+        asx_value = 1700531
         total_cash = f'Cash:\t\t{StrFormat.int100_to_currency_str(self.balance)}'
-        total_asx = f'ASX holdings:\t{"$17,005.31"}'
-        total = f'Total:\t\t{"$27,005.31"}'
-        self.subtitle = total_cash + '\n' + total_asx + '\n' + total
+        total_asx = f'ASX holdings:\t{StrFormat.int100_to_currency_str(asx_value)}'
+        total = f'Total:\t\t{StrFormat.int100_to_currency_str(self.balance + asx_value)}'
+        tax = f'Tax owed:\t{StrFormat.int100_to_currency_str(self.tax)}'
+        self.subtitle = total_cash + '\n' + total_asx + '\n' + total + '\n' + tax
         if self.holdings:
             self.subtitle += '\n\nASX holdings:\n' + Table.holdings(self.holdings, delay_date)
         if self.orders:
@@ -77,7 +82,7 @@ class SimulatorRunMenu(Menu):
         """
 
         option = Menu.select_option(self.options)
-        if option == 5:
+        if option == 7:
             return controller.pop()
         print()
         if option == 1:
@@ -88,6 +93,10 @@ class SimulatorRunMenu(Menu):
             self.visualise()
         elif option == 4:
             self.advance()
+        elif option == 5:
+            self.advance_to_date()
+        elif option == 6:
+            self.pay_tax()
         self.set_title()
         self.set_subtitle()
         controller.display()
@@ -169,28 +178,63 @@ class SimulatorRunMenu(Menu):
 
     def advance(self):
         """
-        Advances the simulator date
+        Advances the simulator by the step interval
         """
 
-        nxt = self.now + self.step_min * Date.MINUTE
-        if nxt > Date.MAX:
-            nxt = Date.MAX
-        # NOTE: make -> if nxt >= 4:00PM or <10:00AM, set nxt to 9.30AM next day
+        self._advance_and_fill(self.now + self.step_min * Date.MINUTE)
 
-        # No orders pending
-        if len(self.orders) == 0:
-            self.now = nxt
-            return
 
-        tickers = self.orders.tickers()
-        while self.now < nxt:
+    # Advance to date
+
+    def advance_to_date(self):
+        """
+        Advances the simulator to a specific date
+        """
+
+        txt = input('Advance to date: ')
+        val = StrFormat.date_str_to_timestamp(txt)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        self._advance_and_fill(val)
+
+
+    # Pay tax
+
+    def pay_tax(self):
+        """
+        Handles the remaining tax balance
+        """
+
+        if self.tax > self.balance:
+            return Printer.ack(f'Insufficient funds')
+        self.balance -= self.tax
+        self.tax = 0
+
+
+    # Internal
+
+    def _advance_and_fill(self, date):
+        """
+        Handles advancing to a date and filling orders
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of date to advance to
+        """
+
+        nxt = min(Date.MAX, date)
+
+        # Fill orders
+        while self.now < nxt and len(self.orders) > 0:
+            tickers = self.orders.tickers()
             prices = Database.fetch_multiple_live_prices(self.now, *tickers)
             prices = dict(zip(tickers, prices))
             self._fill_all_orders(prices)
             self.now += Date.MINUTE
 
+        self.now = nxt
 
-    # Internal
 
     def _market_buy(self, ticker, units):
         """
@@ -336,7 +380,7 @@ class SimulatorRunMenu(Menu):
         total_price = order.units * price + self.broke
         if total_price <= self.balance:
             self.balance -= total_price
-            self.holdings.add(order.ticker, order.units)
+            self.holdings.add(order.ticker, order.units, price)
         return True
 
 
@@ -346,9 +390,11 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._fill_single_order
         """
 
-        total_price = order.units * price - self.broke
-        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker]:
-            self.balance += total_price
+        sell_price = order.units * price - self.broke
+        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker].units:
+            buy_price = self.holdings[order.ticker].unit_price * order.units
+            self.tax += self._cgt_amount(buy_price, sell_price)
+            self.balance += sell_price
             self.holdings.remove(order.ticker, order.units)
         return True
 
@@ -368,7 +414,7 @@ class SimulatorRunMenu(Menu):
         # Success
         if total_price <= self.balance:
             self.balance -= total_price
-            self.holdings.add(order.ticker, order.units)
+            self.holdings.add(order.ticker, order.units, price)
             return True
 
         # Insufficient funds
@@ -385,13 +431,36 @@ class SimulatorRunMenu(Menu):
         if price < order.price:
             return False
 
-        total_price = order.units * price - self.broke
+        sell_price = order.units * price - self.broke
 
         # Success
-        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker]:
-            self.balance += total_price
+        if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker].units:
+            buy_price = self.holdings[order.ticker].unit_price * order.units
+            self.tax += self._cgt_amount(buy_price, sell_price)
+            self.balance += sell_price
             self.holdings.remove(order.ticker, order.units)
             return True
 
         # Not owned
         return False
+
+
+    def _cgt_amount(self, buy, sell):
+        """
+        Returns the Capital Gains Tax amount for a profit or loss
+
+        Parameters
+        ----------
+        buy : int
+            Buy price
+        sell : int
+            Sell price
+
+        Returns
+        -------
+        int
+            Capital Gains Tax amount
+        """
+
+        profit = sell - buy
+        return int(round(profit * self.cgt / 100))

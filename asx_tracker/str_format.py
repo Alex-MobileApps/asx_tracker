@@ -206,7 +206,7 @@ class StrFormat():
             Currency string representation of value
         """
 
-		txt = str(abs(val)).zfill(3)
+		txt = str(abs(int(round(val)))).zfill(3)
 		pref = '-' if val < 0 else ''
 		dollars = txt[:-2]
 		cents = txt[-2:]

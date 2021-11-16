@@ -1,3 +1,5 @@
+from asx_tracker.holding import Holding
+
 class HoldingList():
 
     # Constructor
@@ -20,9 +22,9 @@ class HoldingList():
 
     # Functions
 
-    def add(self, ticker, units):
+    def add(self, ticker, units, unit_price):
         """
-        Add a number of units to the holdings
+        Add a holding to the holding list
 
         Parameters
         ----------
@@ -30,19 +32,26 @@ class HoldingList():
             Ticker name
         units : int
             Number of units
+        unit_price
+            Unit price x100
+
+        Returns
+        -------
+        bool
+            Whether or not the add was successful
         """
 
-        if units < 0:
-            return
         if ticker in self.items:
-            self.items[ticker] += units
+            self.items[ticker].add(units, unit_price)
         else:
-            self.items[ticker] = units
+            self.items[ticker] = Holding(ticker, units, unit_price)
+        return True
+
 
 
     def remove(self, ticker, units):
         """
-        Remove a number of units from the holdings
+        Remove a number of units from a holding in the holding list
 
         Parameters
         ----------
@@ -50,15 +59,20 @@ class HoldingList():
             Ticker name
         units : int
             Number of units
+
+        Returns
+        -------
+        bool
+            Whether or not the remove was successful
         """
 
-        if units < 0 or ticker not in self.items:
-            return
-        old_units = self.items[ticker]
-        if old_units == units:
+        if ticker not in self.items or self.items[ticker].units < units:
+            return False
+        if self.items[ticker].units == units:
             del self.items[ticker]
-        elif old_units > units:
-            self.items[ticker] -= units
+        else:
+            self.items[ticker].units -= units
+        return True
 
 
     def tickers(self):

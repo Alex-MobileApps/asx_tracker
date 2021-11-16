@@ -7,7 +7,7 @@ class Table():
 
     # Static variables
 
-    _HEADER_HOLDINGS = ['Ticker','Units','Delayed price']
+    _HEADER_HOLDINGS = ['Ticker','Units','Avg. purchase price','Delayed price']
     _HEADER_ORDERS = ['Ticker','Type','Units','Limit price']
 
 
@@ -191,7 +191,8 @@ class Table():
         len_holdings = len(holding_list)
         rows = [None] * len_holdings
         for i in range(len_holdings):
-            rows[i] = (tickers[i], str(holding_list[tickers[i]]), StrFormat.int100_to_currency_str(prices[i]))
+            holding = holding_list[tickers[i]]
+            rows[i] = (tickers[i], str(holding.units), StrFormat.int100_to_currency_str(holding.unit_price), StrFormat.int100_to_currency_str(prices[i]))
         return rows
 
 

@@ -345,6 +345,8 @@ class Scraper():
         # Failed request
         if data.status_code != 200:
             Scraper._rate_limit(start_time)
+            if data.status_code == 400:
+                return None # No values
             raise RuntimeError(f'Status code not 200 ({data.status_code})')
 
         # Servers down

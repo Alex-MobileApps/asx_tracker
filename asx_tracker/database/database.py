@@ -245,14 +245,14 @@ class Database():
 
         Returns
         -------
-        list
-            Live prices for each ticker
+        dict
+            key : str
+                Ticker name
+            value : int or None
+                Live price if exists, else None
         """
 
-        prices = [None] * len(tickers)
-        for i, ticker in enumerate(tickers):
-            prices[i] = Database.fetch_single_live_price(ticker, date)
-        return prices
+        return {ticker: Database.fetch_single_live_price(ticker, date) for ticker in tickers}
 
 
     @staticmethod

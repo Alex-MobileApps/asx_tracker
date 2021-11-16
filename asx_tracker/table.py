@@ -43,7 +43,7 @@ class Table():
     # Holding/Order list strings
 
     @staticmethod
-    def holdings(holding_list, date):
+    def holdings(holding_list, prices):
         """
         Returns a table of a holding list
 
@@ -51,8 +51,8 @@ class Table():
         ----------
         holding_list : HoldingList
             Holding list
-        date : int
-            Timestamp of live date
+        prices : dict
+            See Database.fetch_multiple_live_prices
 
         Returns
         -------
@@ -60,7 +60,7 @@ class Table():
             Table as a string
         """
 
-        return Table.table(Table._HEADER_HOLDINGS, Table._holdings_rows(holding_list, date))
+        return Table.table(Table._HEADER_HOLDINGS, Table._holdings_rows(holding_list, prices))
 
 
     @staticmethod
@@ -169,7 +169,7 @@ class Table():
 
 
     @staticmethod
-    def _holdings_rows(holding_list, date):
+    def _holdings_rows(holding_list, prices):
         """
         Returns a string with the rows of a holding list
 
@@ -177,8 +177,8 @@ class Table():
         ----------
         holding_list : HoldingList
             Holding list
-        date : int
-            Timestamp of live date
+        prices : dict
+            See Database.fetch_multiple_live_prices
 
         Returns
         -------
@@ -187,12 +187,10 @@ class Table():
         """
 
         tickers = holding_list.tickers()
-        prices = Database.fetch_multiple_live_prices(date, *tickers)
-        len_holdings = len(holding_list)
-        rows = [None] * len_holdings
-        for i in range(len_holdings):
-            holding = holding_list[tickers[i]]
-            rows[i] = (tickers[i], str(holding.units), StrFormat.int100_to_currency_str(holding.unit_price), StrFormat.int100_to_currency_str(prices[i]))
+        rows = [None] * len(holding_list)
+        for i, ticker in enumerate(tickers):
+            holding = holding_list[ticker]
+            rows[i] = rows[i] = (ticker, str(holding.units), StrFormat.int100_to_currency_str(holding.unit_price), StrFormat.int100_to_currency_str(prices[ticker]))
         return rows
 
 

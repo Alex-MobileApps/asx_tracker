@@ -57,14 +57,15 @@ class SimulatorRunMenu(Menu):
         """
 
         delay_date = self.now - self.delay * Date.MINUTE
-        asx_value = 1700531
+        prices = Database.fetch_multiple_live_prices(delay_date, *self.holdings.tickers())
+        asx_value = sum([self.holdings[k].units * v for k, v in prices.items()])
         total_cash = f'Cash:\t\t{StrFormat.int100_to_currency_str(self.balance)}'
         total_asx = f'ASX holdings:\t{StrFormat.int100_to_currency_str(asx_value)}'
         total = f'Total:\t\t{StrFormat.int100_to_currency_str(self.balance + asx_value)}'
         tax = f'Tax owed:\t{StrFormat.int100_to_currency_str(self.tax)}'
         self.subtitle = total_cash + '\n' + total_asx + '\n' + total + '\n' + tax
         if self.holdings:
-            self.subtitle += '\n\nASX holdings:\n' + Table.holdings(self.holdings, delay_date)
+            self.subtitle += '\n\nASX holdings:\n' + Table.holdings(self.holdings, prices)
         if self.orders:
             self.subtitle += '\n\nPending orders:\n' + Table.orders(self.orders)
 
@@ -229,7 +230,6 @@ class SimulatorRunMenu(Menu):
         while self.now < nxt and len(self.orders) > 0:
             tickers = self.orders.tickers()
             prices = Database.fetch_multiple_live_prices(self.now, *tickers)
-            prices = dict(zip(tickers, prices))
             self._fill_all_orders(prices)
             self.now += Date.MINUTE
 

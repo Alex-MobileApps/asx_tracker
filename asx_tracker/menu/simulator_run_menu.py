@@ -234,7 +234,7 @@ class SimulatorRunMenu(Menu):
         print('Transaction history:')
         print(history)
         print()
-        Printer.ack('Press Enter to continue: ')
+        Printer.ack('')
 
 
     # Internal

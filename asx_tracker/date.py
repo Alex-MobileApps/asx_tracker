@@ -145,7 +145,7 @@ class Date():
         d = d.replace(hour=Date.HOUR_OPEN)
         weekday = d.weekday()
         days = 0 if weekday < 5 else 7 - weekday
-        d = d.replace(hour=Date.HOUR_OPEN) + timedelta(days=days)
+        d = d.replace(hour=Date.HOUR_OPEN, minute=0, second=0, microsecond=0) + timedelta(days=days)
         return int(d.timestamp())
 
 

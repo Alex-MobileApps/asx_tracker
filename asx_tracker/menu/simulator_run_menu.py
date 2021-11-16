@@ -4,9 +4,11 @@ from asx_tracker.printer import Printer
 from asx_tracker.str_format import StrFormat
 from asx_tracker.table import Table
 from asx_tracker.date import Date
+from asx_tracker.transaction import Transaction
 from asx_tracker.utils import Utils
 from asx_tracker.holding_list import HoldingList
 from asx_tracker.order_list import OrderList
+from asx_tracker.transaction_list import TransactionList
 from asx_tracker.order import Order
 
 class SimulatorRunMenu(Menu):
@@ -21,6 +23,7 @@ class SimulatorRunMenu(Menu):
             'Advance',
             'Advance to date',
             'Pay Tax',
+            'Transaction history',
             'End'
         ])
 
@@ -35,6 +38,7 @@ class SimulatorRunMenu(Menu):
 
         self.holdings = HoldingList()
         self.orders = OrderList()
+        self.transactions = TransactionList()
         self.set_title()
         self.set_subtitle()
 
@@ -83,7 +87,7 @@ class SimulatorRunMenu(Menu):
         """
 
         option = Menu.select_option(self.options)
-        if option == 7:
+        if option == 8:
             return controller.pop()
         print()
         if option == 1:
@@ -98,6 +102,8 @@ class SimulatorRunMenu(Menu):
             self.advance_to_date()
         elif option == 6:
             self.pay_tax()
+        elif option == 7:
+            self.transaction_history()
         self.set_title()
         self.set_subtitle()
         controller.display()
@@ -149,12 +155,17 @@ class SimulatorRunMenu(Menu):
         Cancels an active order
         """
 
-        options = [f"Cancel {order.order_type} {order.ticker} x {order.units} @ {Order.MARKET_PRICE if order.price is None else StrFormat.int100_to_currency_str(order.price)}" for order in self.orders] + ['Back']
+        options = [f'Cancel {order}' for order in self.orders] + ['Back']
         Printer.options(options)
         option = Menu.select_option(options)
         if option == len(options):
             return
-        self.orders.remove(option-1)
+        idx = option - 1
+        order = self.orders[idx]
+        print()
+        if Utils.confirm(f'Confirm cancel {order}'):
+            self.transactions.add(Transaction(self.now, order, status=Transaction.STATUS_CANCELLED))
+            self.orders.remove(idx)
 
 
     # Visualise
@@ -212,40 +223,21 @@ class SimulatorRunMenu(Menu):
         self.tax = 0
 
 
+    # Transaction history
+
+    def transaction_history(self):
+        """
+        Prints the history of completed transactions
+        """
+
+        history = Table.transactions(self.transactions)
+        print('Transaction history:')
+        print(history)
+        print()
+        Printer.ack('Press Enter to continue: ')
+
+
     # Internal
-
-    def _advance_and_fill(self, date):
-        """
-        Handles advancing to a date and filling orders
-
-        Parameters
-        ----------
-        date : int
-            Timestamp of date to advance to
-        """
-
-        # End date
-        nxt = min(Date.MAX, date)
-        if not Date.market_open(nxt):
-            nxt = Date.timestamp_next_open(nxt)
-
-        while self.now < nxt:
-
-            # Market closed
-            if not Date.market_open(self.now):
-                self.now = Date.timestamp_next_open(self.now)
-
-            # No orders
-            elif len(self.orders) == 0:
-                self.now = nxt
-
-            # Fill orders
-            else:
-                tickers = self.orders.tickers()
-                prices = Database.fetch_multiple_live_prices(self.now, *tickers)
-                self._fill_all_orders(prices)
-                self.now += Date.MINUTE
-
 
     def _market_buy(self, ticker, units):
         """
@@ -304,9 +296,9 @@ class SimulatorRunMenu(Menu):
             Order.TYPE_MARKET_SELL : Market sell order
         """
 
-        message = f'Confirm {order_type} {ticker} x {units} @ {Order.MARKET_PRICE} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
+        order = Order(ticker, order_type, units)
+        message = f'Confirm {order} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
-            order = Order(ticker, order_type, units)
             self.orders.add(order)
 
 
@@ -328,10 +320,42 @@ class SimulatorRunMenu(Menu):
         txt = input('Enter limit price: ')
         val = StrFormat.currency_str_to_int100(txt, non_neg=True)
         print()
-        message = f'Confirm {order_type} {ticker} x {units} @ {StrFormat.int100_to_currency_str(val)} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
+        order = Order(ticker, order_type, units, val)
+        message = f'Confirm {order} ({StrFormat.int100_to_currency_str(self.broke)} brokerage)'
         if Utils.confirm(message):
-            order = Order(ticker, order_type, units, val)
             self.orders.add(order)
+
+    def _advance_and_fill(self, date):
+        """
+        Handles advancing to a date and filling orders
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of date to advance to
+        """
+
+        # End date
+        nxt = min(Date.MAX, date)
+        if not Date.market_open(nxt):
+            nxt = Date.timestamp_next_open(nxt)
+
+        while self.now < nxt:
+
+            # Market closed
+            if not Date.market_open(self.now):
+                self.now = Date.timestamp_next_open(self.now)
+
+            # No orders
+            elif len(self.orders) == 0:
+                self.now = nxt
+
+            # Fill orders
+            else:
+                tickers = self.orders.tickers()
+                prices = Database.fetch_multiple_live_prices(self.now, *tickers)
+                self._fill_all_orders(prices)
+                self.now += Date.MINUTE
 
 
     def _fill_all_orders(self, prices):
@@ -349,7 +373,9 @@ class SimulatorRunMenu(Menu):
             price = prices[order.ticker]
             if price is None:
                 continue # No previous entry
-            if self._fill_single_order(order, price):
+            transaction = self._fill_single_order(order, price)
+            if transaction is not None:
+                self.transactions.add(transaction)
                 filled.append(i)
         for i in reversed(filled):
             self.orders.remove(i)
@@ -368,8 +394,8 @@ class SimulatorRunMenu(Menu):
 
         Returns
         -------
-        bool
-            Whether or not the order was filled successfully
+        Transaction or None
+            Transaction if order filled successfully, else None
         """
 
         if order.order_type == Order.TYPE_MARKET_BUY:
@@ -388,11 +414,13 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._fill_single_order
         """
 
-        total_price = order.units * price + self.broke
-        if total_price <= self.balance:
-            self.balance -= total_price
+        gross = order.units * price + self.broke
+        transaction = Transaction(self.now, order, price)
+        if gross <= self.balance:
+            self.balance -= gross
             self.holdings.add(order.ticker, order.units, price)
-        return True
+            return Transaction(self.now, order, price, gross, status=Transaction.STATUS_SUCCESSFUL)
+        return Transaction(self.now, order, price, status=Transaction.STATUS_FAILED)
 
 
     def _fill_market_sell(self, order, price):
@@ -401,13 +429,15 @@ class SimulatorRunMenu(Menu):
         See SimulatorRunMenu._fill_single_order
         """
 
-        sell_price = order.units * price - self.broke
+        gross = order.units * price - self.broke
         if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker].units:
             buy_price = self.holdings[order.ticker].unit_price * order.units
-            self.tax += self._cgt_amount(buy_price, sell_price)
-            self.balance += sell_price
+            tax = self._cgt_amount(buy_price, gross)
+            self.tax += tax
+            self.balance += gross
             self.holdings.remove(order.ticker, order.units)
-        return True
+            return Transaction(self.now, order, price, gross, tax, status=Transaction.STATUS_SUCCESSFUL)
+        return Transaction(self.now, order, price, status=Transaction.STATUS_FAILED)
 
 
     def _fill_limit_buy(self, order, price):
@@ -418,18 +448,14 @@ class SimulatorRunMenu(Menu):
 
         # Not at limit
         if price > order.price:
-            return False
+            return
 
-        total_price = order.units * price + self.broke
-
-        # Success
-        if total_price <= self.balance:
-            self.balance -= total_price
+        # At limit
+        gross = order.units * price + self.broke
+        if gross <= self.balance:
+            self.balance -= gross
             self.holdings.add(order.ticker, order.units, price)
-            return True
-
-        # Insufficient funds
-        return False
+            return Transaction(self.now, order, price, gross, status=Transaction.STATUS_SUCCESSFUL)
 
 
     def _fill_limit_sell(self, order, price):
@@ -440,20 +466,17 @@ class SimulatorRunMenu(Menu):
 
         # Not at limit
         if price < order.price:
-            return False
+            return
 
-        sell_price = order.units * price - self.broke
-
-        # Success
+        # At limit
+        gross = order.units * price - self.broke
         if order.ticker in self.holdings.items and order.units <= self.holdings[order.ticker].units:
             buy_price = self.holdings[order.ticker].unit_price * order.units
-            self.tax += self._cgt_amount(buy_price, sell_price)
-            self.balance += sell_price
+            tax = self._cgt_amount(buy_price, gross)
+            self.tax += tax
+            self.balance += gross
             self.holdings.remove(order.ticker, order.units)
-            return True
-
-        # Not owned
-        return False
+            return Transaction(self.now, order, price, gross, tax, status=Transaction.STATUS_SUCCESSFUL)
 
 
     def _cgt_amount(self, buy, sell):

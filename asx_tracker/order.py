@@ -1,3 +1,5 @@
+from asx_tracker.str_format import StrFormat
+
 class Order():
 
     # Static variables
@@ -17,6 +19,12 @@ class Order():
         self.set_order_type(order_type)
         self.set_units(units)
         self.set_price(price)
+
+
+    # String
+
+    def __str__(self):
+        return f'{self.order_type} {self.ticker} x {str(self.units)} @ {Order.MARKET_PRICE if self.price is None else StrFormat.int100_to_currency_str(self.price)}'
 
 
     # Setters

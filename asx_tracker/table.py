@@ -1,14 +1,15 @@
 from shutil import get_terminal_size
 from asx_tracker.order import Order
 from asx_tracker.str_format import StrFormat
-from asx_tracker.database.database import Database
+from asx_tracker.date import Date
 
 class Table():
 
     # Static variables
 
-    _HEADER_HOLDINGS = ['Ticker','Units','Avg. purchase price','Delayed price']
-    _HEADER_ORDERS = ['Ticker','Type','Units','Limit price']
+    _HEADER_HOLDINGS        = ['Ticker','Units','Avg. purchase price','Delayed price']
+    _HEADER_ORDERS          = ['Ticker','Type','Units','Limit price']
+    _HEADER_TRANSACTIONS    = ['Date','Order','Unit price','Gross','Tax','Status']
 
 
     # Table string
@@ -40,7 +41,7 @@ class Table():
             return h
 
 
-    # Holding/Order list strings
+    # Holdings string
 
     @staticmethod
     def holdings(holding_list, prices):
@@ -63,6 +64,8 @@ class Table():
         return Table.table(Table._HEADER_HOLDINGS, Table._holdings_rows(holding_list, prices))
 
 
+    # Orders string
+
     @staticmethod
     def orders(order_list):
         """
@@ -80,6 +83,27 @@ class Table():
         """
 
         return Table.table(Table._HEADER_ORDERS, Table._orders_rows(order_list))
+
+
+    # Transactions string
+
+    @staticmethod
+    def transactions(transaction_list):
+        """
+        Returns a table of a transaction list
+
+        Parameters
+        ----------
+        transaction_list : TransactionList
+            Transaction list
+
+        Returns
+        -------
+        str
+            Table as a string
+        """
+
+        return Table.table(Table._HEADER_TRANSACTIONS, Table._transactions_rows(transaction_list))
 
 
     # Internal
@@ -210,9 +234,36 @@ class Table():
             List of row data
         """
 
-        len_orders = len(order_list)
-        rows = [None] * len_orders
+        rows = [None] * len(order_list)
         for i, order in enumerate(order_list):
             lim = Order.MARKET_PRICE if order.price is None else StrFormat.int100_to_currency_str(order.price)
             rows[i] = (order.ticker, order.order_type, str(order.units), lim)
+        return rows
+
+
+    @staticmethod
+    def _transactions_rows(transaction_list):
+        """
+        Returns a string with the rows of a transaction list
+
+        Parameters
+        ----------
+        transaction_list : TransactionList
+            Transaction list
+
+        Returns
+        -------
+        list
+            List of row data
+        """
+
+        rows = [None] * len(transaction_list)
+        for i, transaction in enumerate(transaction_list):
+            date = Date.timestamp_to_date_str(transaction.date)
+            order = str(transaction.order)
+            unit_price = '' if transaction.unit_price is None else StrFormat.int100_to_currency_str(transaction.unit_price)
+            balance = '' if transaction.gross is None else StrFormat.int100_to_currency_str(transaction.gross)
+            tax = '' if transaction.tax is None else StrFormat.int100_to_currency_str(transaction.tax)
+            status = transaction.status
+            rows[i] = (date, order, unit_price, balance, tax, status)
         return rows

@@ -160,7 +160,7 @@ class Date():
             Conversion of timestamps to Sydney based timestamps
         """
 
-        fn = lambda t: datetime.fromtimestamp(t, tz=timezone(Date._TZ_SYDNEY))
+        fn = lambda t: datetime.fromtimestamp(t, tz=Date._TZ_SYDNEY_INFO)
         if len(timestamps) > 1:
             return [fn(t) for t in timestamps]
         return fn(timestamps[0])

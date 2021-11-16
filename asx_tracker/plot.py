@@ -3,6 +3,7 @@ import pandas as pd
 from asx_tracker.date import Date
 from asx_tracker.database.database import Database
 from asx_tracker.printer import Printer
+from asx_tracker.utils import Utils
 
 class Plot():
 
@@ -106,7 +107,8 @@ class Plot():
         df = pd.DataFrame(data, columns=plot_cols)
         for col in [Plot._COL_OPEN, Plot._COL_HIGH, Plot._COL_LOW, Plot._COL_CLOSE]:
             df[col] /= 100
-        df[Database.COL_DATE] = Date.timestamp_to_datetime(df[Database.COL_DATE])
+        new_dates = Date.timestamp_to_datetime(*df[Database.COL_DATE])
+        df[Database.COL_DATE] = new_dates if Utils.has_len(new_dates) else [new_dates]
         df.set_index(Database.COL_DATE, inplace=True)
         return df
 

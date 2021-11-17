@@ -74,13 +74,8 @@ class Plot():
             Timestamp of end date
         """
 
-        date = Date.timestamp_to_datetime(end)
-        date = date.replace(hour=0, minute=0, second=0, microsecond=0)
-        start = int(date.timestamp())
-        df = Plot._fetch_intraday_or_daily(ticker, Database.fetch_single_intraday, start, end)
-        if df is None:
-            Printer.ack(f'No data found for {ticker} between the specified dates')
-        Plot._plot(df, **kwargs)
+        start = Date.timestamp_to_day_start(end)
+        Plot.intraday(ticker, start, end, **kwargs)
 
 
     @staticmethod

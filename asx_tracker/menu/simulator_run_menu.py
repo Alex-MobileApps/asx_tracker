@@ -21,6 +21,7 @@ class SimulatorRunMenu(Menu):
             'Buy or Sell',
             'Cancel order',
             'Visualise',
+            'Add / remove cash',
             'Advance',
             'Advance to date',
             'Pay Tax',
@@ -93,7 +94,7 @@ class SimulatorRunMenu(Menu):
         """
 
         option = Menu.select_option(self.options)
-        if option == 8:
+        if option == 9:
             return controller.pop()
         print()
         if option == 1:
@@ -103,12 +104,14 @@ class SimulatorRunMenu(Menu):
         elif option == 3:
             self.visualise()
         elif option == 4:
-            self.advance()
+            self.add_remove_cash()
         elif option == 5:
-            self.advance_to_date()
+            self.advance()
         elif option == 6:
-            self.pay_tax()
+            self.advance_to_date()
         elif option == 7:
+            self.pay_tax()
+        elif option == 8:
             self.transaction_history()
         self.set_title()
         self.set_subtitle()
@@ -205,6 +208,18 @@ class SimulatorRunMenu(Menu):
             Plot.period_2y(*args)
         elif option == 8:
             Plot.period_max(*args)
+
+
+    # Add / remove cash
+
+    def add_remove_cash(self):
+        txt = input('Add/remove cash: ')
+        val = StrFormat.currency_str_to_int100(txt)
+        if val is None:
+            return Printer.ack(f'{txt} is not valid')
+        print()
+        if Utils.confirm(f'Confirm change cash balance by {StrFormat.int100_to_currency_str(val)}'):
+            self.balance += val
 
 
     # Advance

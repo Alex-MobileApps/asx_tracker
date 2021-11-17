@@ -273,31 +273,62 @@ class Database():
             int if a live price is found, else None
         """
 
-        last_intraday = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_INTRADAY, date, Database.COL_DATE, Database.COL_CLOSE)
+        intraday_date, intraday_close = Database.fetch_single_live_intraday(ticker, date)
 
         # No intraday
-        if not last_intraday:
-            last_daily = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_DAILY, date, Database.COL_CLOSE)
-            return last_daily[0][0] if last_daily else None
+        if intraday_date is None:
+            daily_date, daily_close = Database.fetch_single_live_daily(ticker, date)
+            return daily_close
 
         min_date = Date.timestamp_to_datetime(Date.MIN)
         days_since = lambda t: (Date.timestamp_to_datetime(t) - min_date).days
 
         # Intraday on current day
-        intraday_date, intraday_close = last_intraday[0]
         live_day, intraday_day = days_since(date), days_since(intraday_date)
         if live_day == intraday_day:
             return intraday_close
 
         # No daily
-        last_daily = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_DAILY, date, Database.COL_DATE, Database.COL_CLOSE)
-        if not last_daily:
+        daily_date, daily_close = Database.fetch_single_live_daily(ticker, date)
+        if not daily_date is None:
             return intraday_close
 
         # Return intraday if newer, else daily
-        daily_date, daily_close = last_daily[0]
         daily_day = days_since(daily_date)
         return intraday_close if intraday_day > daily_day else daily_close
+
+
+    @staticmethod
+    def fetch_single_live_intraday(ticker, date):
+        """
+        Fetches the last intraday date and price for a single ticker
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker name
+        date : int
+            Live timestamp
+
+        Returns
+        -------
+        tuple
+            (date, price) if a record exists, else (None, None)
+        """
+
+        data = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_INTRADAY, date, Database.COL_DATE, Database.COL_CLOSE)
+        return data[0] if data else (None, None)
+
+
+    @staticmethod
+    def fetch_single_live_daily(ticker, date):
+        """
+        Fetches the last daily date and price for a single ticker.
+        See Database.fetch_single_live_intraday
+        """
+
+        data = Database._fetch_live_intraday_or_daily(ticker, Database.TAB_DAILY, date, Database.COL_DATE, Database.COL_CLOSE)
+        return data[0] if data else (None, None)
 
 
     # Internal

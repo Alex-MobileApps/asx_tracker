@@ -61,8 +61,7 @@ class SimulatorRunMenu(Menu):
         Sets the main menu's subtitle
         """
 
-        delay_date = self.now - self.delay * Date.MINUTE
-        prices = Database.fetch_multiple_live_prices(delay_date, *self.holdings.tickers())
+        prices = Database.fetch_multiple_live_prices(self._delayed_time(), *self.holdings.tickers())
         asx_value = sum([self.holdings[k].units * v for k, v in prices.items()])
         total_cash = f'Cash:\t\t{StrFormat.int100_to_currency_str(self.balance)}'
         total_asx = f'ASX holdings:\t{StrFormat.int100_to_currency_str(asx_value)}'
@@ -178,9 +177,28 @@ class SimulatorRunMenu(Menu):
         if not Database.fetch_single_listing(ticker, Database.COL_TICKER):
             return Printer.ack(f'{ticker} is not valid')
         print()
-        end = self.now - self.delay * Date.MINUTE
-        start = end - Date.DAY
-        Plot.intraday(ticker, start, end)
+        options = Plot.PERIOD_OPTIONS + ['Back']
+        Printer.options(options)
+        option = Menu.select_option(options)
+        if option == 9:
+            return
+        args = (ticker, self._delayed_time())
+        if option == 1:
+            Plot.period_1d(*args)
+        elif option == 2:
+            Plot.period_1w(*args)
+        elif option == 3:
+            Plot.period_1m(*args)
+        elif option == 4:
+            Plot.period_6m(*args)
+        elif option == 5:
+            Plot.period_ytd(*args)
+        elif option == 6:
+            Plot.period_1y(*args)
+        elif option == 7:
+            Plot.period_2y(*args)
+        elif option == 8:
+            Plot.period_max(*args)
 
 
     # Advance
@@ -235,6 +253,20 @@ class SimulatorRunMenu(Menu):
 
 
     # Internal
+
+
+    def _delayed_time(self):
+        """
+        Returns the delayed simulator time
+
+        Returns
+        -------
+        int
+            Timestamp of delayed time
+        """
+
+        return self.now - self.delay * Date.MINUTE
+
 
     def _market_buy(self, ticker, units):
         """

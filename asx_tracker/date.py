@@ -12,6 +12,8 @@ class Date():
     HOUR            = 3600
     DAY             = 86400
     WEEK            = 604800
+    MONTH_31        = 2678400
+    HALF_YEAR_365   = 15768000
     YEAR_365        = 31536000
     MIN             = -36000
     MAX             = 253402232400
@@ -26,6 +28,7 @@ class Date():
     _NOW            = 'NOW'
     _MIN            = 'MIN'
     _MAX            = 'MAX'
+
 
     # Timestamps
 
@@ -93,6 +96,28 @@ class Date():
 
 
     @staticmethod
+    def same_day(date1, date2):
+        """
+        Returns whether or not two dates are on the same day
+
+        Parameters
+        ----------
+        date1 : int
+            Timestamp of the first date
+        date2 : int
+            Timestamp of the first date
+
+        Returns
+        -------
+        bool
+            Whether or not both dates are on the same day
+        """
+
+        d1, d2 = Date.timestamp_to_datetime(date1, date2)
+        return d1.day == d2.day and d1.month == d2.month and d1.year == d2.year
+
+
+    @staticmethod
     def market_open(date):
         """
         Returns whether or not the market is open at a given date
@@ -109,15 +134,55 @@ class Date():
         """
 
         d = Date.timestamp_to_datetime(date)
-        if d.weekday() >= 5:
-            return False
-        if d.hour < Date.HOUR_OPEN:
-            return False
-        if d.hour > Date.HOUR_CLOSE:
+        if d.weekday() >= 5 or d.hour < Date.HOUR_OPEN or d.hour > Date.HOUR_CLOSE:
             return False
         if d.hour == Date.HOUR_CLOSE:
             return d.minute == 0
         return True
+
+
+    @staticmethod
+    def after_close(date):
+        """
+        Returns whether or not the market has already closed for a given date
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of the date
+
+        Returns
+        -------
+        bool
+            Whether or not the market has already closed
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        if d.weekday() >= 5 or d.hour > Date.HOUR_CLOSE:
+            return True
+        if d.hour == Date.HOUR_CLOSE:
+            return d.minute == 0
+        return False
+
+
+    @staticmethod
+    def before_open(date):
+        """
+        Returns whether or not the market has yet to open for a given date
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of the date
+
+        Returns
+        -------
+        bool
+            Whether or not the market has yet to open
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        return d.weekday() >= 5 or d.hour < Date.HOUR_OPEN
 
 
     @staticmethod
@@ -146,6 +211,71 @@ class Date():
         weekday = d.weekday()
         days = 0 if weekday < 5 else 7 - weekday
         d = d.replace(hour=Date.HOUR_OPEN, minute=0, second=0, microsecond=0) + timedelta(days=days)
+        return int(d.timestamp())
+
+
+    @staticmethod
+    def timestamp_to_day_end(date):
+        """
+        Converts a date to time 23:59:00 on the same day
+
+        Parameters
+        ----------
+        date : int
+            Timestamp of the date
+
+        Returns
+        -------
+        int
+            Converted timestamp
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        d = d.replace(hour=23, minute=59, second=0, microsecond=0)
+        return int(d.timestamp())
+
+
+    @staticmethod
+    def timestamp_to_day_start(date):
+        """
+        Converts a date to time 00:00:00 on the same day.
+        See Date.timestamp_to_day_end
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        d = d.replace(hour=0, minute=0, second=0, microsecond=0)
+        return int(d.timestamp())
+
+
+    @staticmethod
+    def timestamp_to_prev_day_end(date):
+        """
+        Converts a date to time 23:59:00 on the previous day.
+        See Date.timestamp_to_day_end
+        """
+
+        return Date.timestamp_to_day_start(date) - Date.MINUTE
+
+
+    @staticmethod
+    def timestamp_to_next_day_start(date):
+        """
+        Converts a date to time 00:00:00 on the next day.
+        See Date.timestamp_to_day_end
+        """
+
+        return Date.timestamp_to_day_end(date) + Date.MINUTE
+
+
+    @staticmethod
+    def timestamp_to_year_start(date):
+        """
+        Converts a date to 1 JAN 00:00:00 for the same year.
+        See Date.timestamp_to_day_end
+        """
+
+        d = Date.timestamp_to_datetime(date)
+        d = d.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         return int(d.timestamp())
 
 

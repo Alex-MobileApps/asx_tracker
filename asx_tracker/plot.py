@@ -44,7 +44,7 @@ class Plot():
             Timestamp of end date of the plot
         """
 
-        Plot._plot_intraday_or_daily(ticker, Database.fetch_single_intraday, start, end, title=ticker, **kwargs)
+        Plot._plot_intraday_or_daily(ticker, Database.fetch_single_intraday, start, end, **kwargs)
 
 
     # Plot daily
@@ -56,7 +56,7 @@ class Plot():
         See Plot.intraday
         """
 
-        Plot._plot_intraday_or_daily(ticker, Database.fetch_single_daily, start, end, title=ticker, **kwargs)
+        Plot._plot_intraday_or_daily(ticker, Database.fetch_single_daily, start, end, **kwargs)
 
 
     # Periods
@@ -185,7 +185,7 @@ class Plot():
             Printer.ack(f'No data found for {ticker} between the specified dates')
         else:
             print('Close plot to continue')
-            Plot._plot(df, **kwargs)
+            Plot._plot(df, title=ticker, **kwargs)
 
 
     @staticmethod
@@ -203,19 +203,26 @@ class Plot():
             Timestamp of end date of the plot
         """
 
-        # Market closed = Daily only
+        # Market closed
         if not Date.market_open(end):
-            end = Date.timestamp_to_day_end(end) if Date.after_close(end) else Date.timestamp_to_prev_day_end(end)
-            return Plot.daily(ticker, start, end, **kwargs)
+            daily_end = Date.timestamp_to_day_end(end) if Date.after_close(end) else Date.timestamp_to_prev_day_end(end)
+            return Plot.daily(ticker, start, daily_end, **kwargs)
 
         # Market open
+        daily_end = Date.timestamp_to_prev_day_end(end)
         intraday_date, intraday_price = Database.fetch_single_live_intraday(ticker, end)
-        if intraday_date is None or not Date.same_day(end, intraday_date):
-            end = Date.timestamp_to_prev_day_end(end)
-            return Plot.daily(ticker, start, end, **kwargs)
 
-        # TODO: show during day
-        return Plot.intraday(ticker, start, end, **kwargs)
+        # No recent intraday
+        if intraday_date is None or not Date.same_day(end, intraday_date):
+            return Plot.daily(ticker, start, daily_end, **kwargs)
+
+        # Recent intraday
+        df = Plot._fetch_intraday_or_daily(ticker, Database.fetch_single_daily, start, daily_end)
+        if df is None:
+            return Plot.intraday(ticker, start, end, **kwargs)
+        div_price = intraday_price / 100
+        df.loc[Date.timestamp_to_datetime(intraday_date)] = {k: 0 if k == Plot._COL_VOL else div_price for k in df.columns}
+        Plot._plot(df, title=ticker, **kwargs)
 
 
     @staticmethod

@@ -7,8 +7,8 @@ class Table():
 
     # Static variables
 
-    _HEADER_HOLDINGS        = ['Ticker','Units','Avg. purchase price','Delayed price']
-    _HEADER_ORDERS          = ['Ticker','Type','Units','Limit price']
+    _HEADER_HOLDINGS        = ['Ticker','Units','Avg. purchase price','Price (delayed)']
+    _HEADER_ORDERS          = ['Ticker','Type','Units','Limit price','Price (delayed)']
     _HEADER_TRANSACTIONS    = ['Date','Order','Unit price','Gross','Tax','Status']
 
 
@@ -67,7 +67,7 @@ class Table():
     # Orders string
 
     @staticmethod
-    def orders(order_list):
+    def orders(order_list, prices):
         """
         Returns a table of an order list
 
@@ -75,6 +75,8 @@ class Table():
         ----------
         order_list : OrderList
             Order list
+        prices : dict
+            See Database.fetch_multiple_live_prices
 
         Returns
         -------
@@ -82,7 +84,7 @@ class Table():
             Table as a string
         """
 
-        return Table.table(Table._HEADER_ORDERS, Table._orders_rows(order_list))
+        return Table.table(Table._HEADER_ORDERS, Table._orders_rows(order_list, prices))
 
 
     # Transactions string
@@ -219,7 +221,7 @@ class Table():
 
 
     @staticmethod
-    def _orders_rows(order_list):
+    def _orders_rows(order_list, prices):
         """
         Returns a string with the rows of an order list
 
@@ -227,6 +229,8 @@ class Table():
         ----------
         order_list : OrderList
             Order list
+        prices : dict
+            See Database.fetch_multiple_live_prices
 
         Returns
         -------
@@ -237,7 +241,8 @@ class Table():
         rows = [None] * len(order_list)
         for i, order in enumerate(order_list):
             lim = Order.MARKET_PRICE if order.price is None else StrFormat.int100_to_currency_str(order.price)
-            rows[i] = (order.ticker, order.order_type, str(order.units), lim)
+            cur = '' if prices[order.ticker] is None else StrFormat.int100_to_currency_str(prices[order.ticker])
+            rows[i] = (order.ticker, order.order_type, str(order.units), lim, cur)
         return rows
 
 

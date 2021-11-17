@@ -61,8 +61,14 @@ class SimulatorRunMenu(Menu):
         Sets the main menu's subtitle
         """
 
-        prices = Database.fetch_multiple_live_prices(self._delayed_time(), *self.holdings.tickers())
-        asx_value = sum([self.holdings[k].units * v for k, v in prices.items()])
+        # Tickers and amounts
+        holdings_tickers = self.holdings.tickers()
+        orders_tickers = self.orders.tickers()
+        tickers = list(set(holdings_tickers + orders_tickers))
+        prices = Database.fetch_multiple_live_prices(self._delayed_time(), *tickers)
+        asx_value = sum([self.holdings[t].units * prices[t] for t in holdings_tickers])
+
+        # Subtitle
         total_cash = f'Cash:\t\t{StrFormat.int100_to_currency_str(self.balance)}'
         total_asx = f'ASX holdings:\t{StrFormat.int100_to_currency_str(asx_value)}'
         total = f'Total:\t\t{StrFormat.int100_to_currency_str(self.balance + asx_value)}'
@@ -71,7 +77,7 @@ class SimulatorRunMenu(Menu):
         if self.holdings:
             self.subtitle += '\n\nASX holdings:\n' + Table.holdings(self.holdings, prices)
         if self.orders:
-            self.subtitle += '\n\nPending orders:\n' + Table.orders(self.orders)
+            self.subtitle += '\n\nPending orders:\n' + Table.orders(self.orders, prices)
 
 
     # Menu options

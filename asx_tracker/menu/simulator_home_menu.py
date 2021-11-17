@@ -92,7 +92,7 @@ class SimulatorHomeMenu(Menu):
         val = StrFormat.date_str_to_timestamp(txt)
         if val is None:
             return Printer.ack(f'{txt} is not valid')
-        self.start = val
+        self.start = val if Date.market_open(val) else Date.timestamp_next_open(val)
 
 
     # Time advance interval
